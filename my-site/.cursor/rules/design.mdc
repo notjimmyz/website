@@ -1,0 +1,21 @@
+---
+description: Visual design direction
+globs: ["**/*.tsx", "**/*.css"]
+alwaysApply: true
+---
+
+Follow DESIGN_SYSTEM.md.
+
+Prioritize:
+- typography
+- whitespace
+- hierarchy
+- composition
+- restraint
+
+The aesthetic is "soft editorial minimalism with playful nostalgia."
+
+Avoid generic AI/SaaS design patterns.
+
+Playfulness should come from a few memorable details rather than
+adding more UI.

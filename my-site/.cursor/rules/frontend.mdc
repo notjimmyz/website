@@ -1,0 +1,16 @@
+---
+description: Frontend implementation standards
+globs: ["**/*.tsx", "**/*.ts", "**/*.css"]
+alwaysApply: true
+---
+
+Build polished, production-quality frontend UI.
+
+- Reuse components when appropriate.
+- Use semantic design tokens instead of random values.
+- Design desktop and mobile intentionally.
+- Include polished hover/focus states.
+- Maintain accessibility.
+- Prefer simple implementations over unnecessary abstractions.
+
+Do not sacrifice visual quality just because the UI is functional.

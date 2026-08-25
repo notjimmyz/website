@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "skills": {
+    "animations": {
+      "source": "mthines/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/design/animations/SKILL.md",
+      "computedHash": "d3141db4628ec3049025d8d585cfd119ed42cc81cd18d18453e3bebc985dd8a6"
+    },
+    "feature-arch": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/feature-arch/SKILL.md",
+      "computedHash": "41e9907a435f1e4c81f33ab7640be74de95de13121287132ad70f7cd152606a7"
+    },
+    "nextjs": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nextjs/SKILL.md",
+      "computedHash": "ab54ed432b8301a2b718d8bc44ef91666a65f1963fcf6316e6016aef34dc66b1"
+    },
+    "react": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react/SKILL.md",
+      "computedHash": "c7e93b99ad5ae0d833b8e7e7b03333b9bad2bfd31f7a11cd445aa7eef452a6b4"
+    },
+    "shadcn": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "78545c45b6f9c99229ce8a0a4a1135d10553df83beda2b0c5fb8706e86b86d35"
+    },
+    "svg-skill": {
+      "source": "linyaosky/svg-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "4adfd0c50edc7b4289f9fb67d76b0cb7d1109da837852f7214b86528ec565de1"
+    },
+    "tailwind": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/tailwind/SKILL.md",
+      "computedHash": "ad40283c3138edf1a48db9f65b1b6a09aae35c6ca911ab35d6a5ea5beb66a04d"
+    },
+    "vercel-composition-patterns": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-composition-patterns/SKILL.md",
+      "computedHash": "ef3a4477614296d6911b228e557a04ceb94129d1a2544ba153d9599065b00c22"
+    },
+    "vercel-react-best-practices": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-react-best-practices/SKILL.md",
+      "computedHash": "b542a86ddd3060d952f5bd5011f60800eb92c68b124d4bf4b41bf31f4e20ce80"
+    },
+    "web-design-guidelines": {
+      "source": "PyModel/react-frontend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "6108abc42d011d0e470c70b517966d39c5c23b9f582426f01d73c7b5fb1f7b8f"
+    }
+  }
+}

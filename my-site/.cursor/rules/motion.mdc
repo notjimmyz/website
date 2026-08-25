@@ -1,0 +1,21 @@
+---
+description: Motion and interaction design
+globs: ["**/*.tsx", "**/*.css"]
+alwaysApply: true
+---
+
+Motion should feel soft, subtle, and playful.
+
+Prefer:
+- gentle fades
+- small transforms
+- subtle hover reactions
+- occasional character animations
+
+Avoid:
+- excessive motion
+- dramatic transitions
+- constant movement
+- animation purely for decoration
+
+The site should feel calm when the user isn't interacting with it.
