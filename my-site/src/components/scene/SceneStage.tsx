@@ -4,6 +4,7 @@ import { motion, type MotionValue } from "motion/react";
 import type { ComponentType, ReactNode } from "react";
 import { ERAS, type EraId } from "@/lib/timeline";
 import { BerkeleyEnvironment } from "./environments/BerkeleyEnvironment";
+import { IsoTonbridgeEnvironment } from "./environments/IsoTonbridgeEnvironment";
 import { NewZealandEnvironment } from "./environments/NewZealandEnvironment";
 import { SanFranciscoEnvironment } from "./environments/SanFranciscoEnvironment";
 import { ShanghaiEnvironment } from "./environments/ShanghaiEnvironment";
@@ -15,6 +16,7 @@ const ENVIRONMENTS: Record<EraId, ComponentType<EnvironmentProps>> = {
   birth: NewZealandEnvironment,
   childhood: ShanghaiEnvironment,
   highschool: TonbridgeEnvironment,
+  sixthform: IsoTonbridgeEnvironment,
   college: BerkeleyEnvironment,
   now: SanFranciscoEnvironment,
 };

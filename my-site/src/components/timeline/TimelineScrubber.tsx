@@ -139,7 +139,7 @@ export function TimelineScrubber({
               type="button"
               className={cn(
                 "min-h-11 transition-opacity duration-150 leading-tight",
-                "text-[0.65rem] tracking-[0.12em] text-foreground/70 uppercase sm:text-xs sm:tracking-[0.16em]",
+                "text-[0.58rem] tracking-[0.08em] text-foreground/70 uppercase sm:text-xs sm:tracking-[0.14em]",
                 "hover:text-foreground",
                 "focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4",
                 index === 0 && "text-left",

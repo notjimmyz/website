@@ -21,18 +21,25 @@ export const ERAS = [
     at: 2,
   },
   {
+    id: "sixthform",
+    label: "Sixth Form",
+    place: "Tonbridge",
+    region: "Kent",
+    at: 3,
+  },
+  {
     id: "college",
     label: "College",
     place: "UC Berkeley",
     region: "California",
-    at: 3,
+    at: 4,
   },
   {
     id: "now",
     label: "Now",
     place: "San Francisco",
     region: "California",
-    at: 4,
+    at: 5,
   },
 ] as const;
 

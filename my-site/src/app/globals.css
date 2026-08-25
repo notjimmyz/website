@@ -170,6 +170,79 @@
   animation: tonbridge-traffic-left 20s linear infinite;
 }
 
+.iso-hover {
+  pointer-events: auto;
+  transform-box: fill-box;
+  transform-origin: 50% 85%;
+  transition: transform 220ms ease;
+}
+
+.iso-hover:hover {
+  transform: translate3d(0, -8px, 0);
+}
+
+@keyframes iso-sway {
+  from {
+    transform: rotate(-2.4deg);
+  }
+  to {
+    transform: rotate(2.4deg);
+  }
+}
+
+.iso-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: iso-sway 3.6s ease-in-out infinite alternate;
+}
+
+@keyframes iso-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-3px);
+  }
+}
+
+.iso-bob {
+  animation: iso-bob 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes iso-drive-se {
+  from {
+    transform: translate3d(-90px, -45px, 0);
+  }
+  to {
+    transform: translate3d(620px, 310px, 0);
+  }
+}
+
+@keyframes iso-drive-nw {
+  from {
+    transform: translate3d(90px, 45px, 0);
+  }
+  to {
+    transform: translate3d(-620px, -310px, 0);
+  }
+}
+
+.iso-drive-se {
+  animation: iso-drive-se 18s linear infinite;
+}
+
+.iso-drive-se-slow {
+  animation: iso-drive-se 24s linear infinite;
+}
+
+.iso-drive-nw {
+  animation: iso-drive-nw 20s linear infinite;
+}
+
+.iso-drive-nw-slow {
+  animation: iso-drive-nw 26s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -181,5 +254,9 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .iso-hover:hover {
+    transform: none;
   }
 }
