@@ -14,37 +14,46 @@ export const ERAS = [
     at: 1,
   },
   {
-    id: "highschool",
+    id: "sixthform",
     label: "High School",
     place: "Tonbridge",
     region: "Kent",
     at: 2,
   },
   {
-    id: "sixthform",
-    label: "Sixth Form",
-    place: "Tonbridge",
-    region: "Kent",
-    at: 3,
-  },
-  {
     id: "college",
     label: "College",
     place: "UC Berkeley",
     region: "California",
-    at: 4,
+    at: 3,
   },
   {
     id: "now",
     label: "Now",
     place: "San Francisco",
     region: "California",
-    at: 5,
+    at: 4,
   },
 ] as const;
 
 export type Era = (typeof ERAS)[number];
 export type EraId = Era["id"];
+
+export const HIGH_STREET_CHAPTER = {
+  id: "high-street",
+  label: "High Street",
+  place: "Tonbridge",
+  region: "Kent",
+} as const;
+
+export const BASKETBALL_CHAPTER = {
+  id: "basketball",
+  label: "Basketball",
+  place: "Tonbridge",
+  region: "Kent",
+} as const;
+
+export type NestedChapter = typeof HIGH_STREET_CHAPTER | typeof BASKETBALL_CHAPTER;
 
 export const TIMELINE_START = ERAS[0].at;
 export const TIMELINE_END = ERAS[ERAS.length - 1].at;

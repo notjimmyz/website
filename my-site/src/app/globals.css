@@ -181,6 +181,24 @@
   transform: translate3d(0, -8px, 0);
 }
 
+.iso-hotspot {
+  cursor: pointer;
+  outline: none;
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+  transition: transform 220ms ease;
+}
+
+.iso-hotspot:hover,
+.iso-hotspot:focus-visible {
+  transform: translate3d(0, -7px, 0);
+}
+
+.iso-hotspot:focus-visible .iso-hotspot-chip {
+  stroke: #5c5048;
+  stroke-opacity: 0.45;
+}
+
 @keyframes iso-sway {
   from {
     transform: rotate(-2.4deg);
@@ -257,6 +275,11 @@
   }
 
   .iso-hover:hover {
+    transform: none;
+  }
+
+  .iso-hotspot:hover,
+  .iso-hotspot:focus-visible {
     transform: none;
   }
 }

@@ -1,20 +1,14 @@
 "use client";
 
-import { motion, useReducedMotion, useTransform } from "motion/react";
-import { eraAt, eraDistance } from "@/lib/timeline";
-import type { EnvironmentProps } from "./types";
+import { useReducedMotion } from "motion/react";
 
-const HIGHSCHOOL_AT = eraAt("highschool");
 const BRICK = "#A65C48";
 const BRICK_DARK = "#8F4E3E";
 const FRAME = "#F3EEE4";
 const ROAD = "#8A8680";
 
-export function TonbridgeEnvironment({ progress }: EnvironmentProps) {
+export function TonbridgeEnvironment() {
   const reduceMotion = useReducedMotion();
-  const streetX = useTransform(progress, (value) =>
-    reduceMotion ? 0 : eraDistance(value, HIGHSCHOOL_AT) * -18,
-  );
 
   return (
     <svg
@@ -36,7 +30,7 @@ export function TonbridgeEnvironment({ progress }: EnvironmentProps) {
         <ellipse cx="760" cy="120" rx="190" ry="32" fill="#B0B8C0" />
       </g>
 
-      <motion.g style={{ x: reduceMotion ? 0 : streetX }}>
+      <g>
         <ParkAndCastle />
         <HighStreet />
         <River />
@@ -57,7 +51,7 @@ export function TonbridgeEnvironment({ progress }: EnvironmentProps) {
           <Person x={640} y={612} fill="#3F5C8A" />
           <Person x={1020} y={612} fill="#6B5340" />
         </g>
-      </motion.g>
+      </g>
 
       <Rain reduceMotion={Boolean(reduceMotion)} />
     </svg>

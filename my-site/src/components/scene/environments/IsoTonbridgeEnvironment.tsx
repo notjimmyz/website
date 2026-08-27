@@ -1,10 +1,11 @@
 "use client";
 
-import { motion, useReducedMotion, useTransform } from "motion/react";
-import { eraAt, eraDistance } from "@/lib/timeline";
+import { motion, useMotionValueEvent, useReducedMotion, useTransform } from "motion/react";
+import { useState, type KeyboardEvent } from "react";
+import { eraAt, eraDistance, eraVisibility } from "@/lib/timeline";
 import type { EnvironmentProps } from "./types";
-import { isoPoints } from "./iso/project";
-import { TonbridgeSchool, TonbridgeSchoolForecourt } from "./IsoTonbridgeCampus";
+import { iso, isoPoints } from "./iso/project";
+import { BASKETBALL_HOTSPOT, TonbridgeSchool, TonbridgeSchoolForecourt } from "./IsoTonbridgeCampus";
 import {
   IsoBox,
   IsoCar,
@@ -56,18 +57,29 @@ const BACK_BLOCKS = [
   { x: 8.1, w: 2.05, h: 2.45, top: "#B8DCC8", left: "#88B8A0", right: "#A0C8B0" },
 ] as const;
 
-export function IsoTonbridgeEnvironment({ progress }: EnvironmentProps) {
+export function IsoTonbridgeEnvironment({
+  progress,
+  onOpenHighStreet,
+  onOpenBasketball,
+}: EnvironmentProps) {
   const reduceMotion = useReducedMotion();
   const drift = useTransform(progress, (value) =>
     reduceMotion ? 0 : eraDistance(value, SIXTHFORM_AT) * -14,
   );
+  const [hotspotOn, setHotspotOn] = useState(
+    () => eraVisibility(progress.get(), SIXTHFORM_AT) > 0.45,
+  );
+
+  useMotionValueEvent(progress, "change", (value) => {
+    const on = eraVisibility(value, SIXTHFORM_AT) > 0.45;
+    setHotspotOn((prev) => (prev === on ? prev : on));
+  });
 
   return (
     <svg
       viewBox="0 0 1440 900"
       preserveAspectRatio="xMidYMid slice"
       className="h-full w-full"
-      aria-hidden="true"
     >
       <rect width="1440" height="900" fill="#F4EFE4" />
       <ellipse cx="720" cy="168" rx="280" ry="36" fill="#E8E0D2" opacity="0.7" />
@@ -86,6 +98,16 @@ export function IsoTonbridgeEnvironment({ progress }: EnvironmentProps) {
         <TonbridgeSchool reduceMotion={Boolean(reduceMotion)} />
         <NorthPavement reduceMotion={Boolean(reduceMotion)} />
         <RoadAndBridge />
+        <IsoHotspot
+          x={5.15}
+          y={4.68}
+          z={5.35}
+          label="High Street"
+          ariaLabel="Explore High Street"
+          accent="#7EB89A"
+          active={hotspotOn}
+          onOpen={onOpenHighStreet}
+        />
         <Traffic reduceMotion={Boolean(reduceMotion)} />
         <SouthPavement reduceMotion={Boolean(reduceMotion)} />
         <SouthHighStreet />
@@ -93,8 +115,111 @@ export function IsoTonbridgeEnvironment({ progress }: EnvironmentProps) {
         <EastSouthStreet reduceMotion={Boolean(reduceMotion)} />
         <MidSouthStreet />
         <TonbridgeSchoolForecourt reduceMotion={Boolean(reduceMotion)} />
+        <IsoHotspot
+          x={BASKETBALL_HOTSPOT.x}
+          y={BASKETBALL_HOTSPOT.y}
+          z={4.35}
+          label="Basketball"
+          ariaLabel="Explore Basketball"
+          accent="#7EB8D4"
+          active={hotspotOn}
+          onOpen={onOpenBasketball}
+        />
       </motion.g>
     </svg>
+  );
+}
+
+function IsoHotspot({
+  x,
+  y,
+  z,
+  label,
+  ariaLabel,
+  accent,
+  active,
+  onOpen,
+}: {
+  x: number;
+  y: number;
+  z: number;
+  label: string;
+  ariaLabel: string;
+  accent: string;
+  active: boolean;
+  onOpen?: () => void;
+}) {
+  const ground = iso(x, y, 0.2);
+  const anchor = iso(x, y, z);
+  const chipX = anchor.x - 58;
+  const chipY = anchor.y - 20;
+
+  function activate() {
+    onOpen?.();
+  }
+
+  function onKeyDown(event: KeyboardEvent<SVGGElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activate();
+    }
+  }
+
+  return (
+    <g
+      role="button"
+      tabIndex={active ? 0 : -1}
+      aria-label={ariaLabel}
+      data-landmark={`${label.toLowerCase().replace(/\s+/g, "-")}-hotspot`}
+      className="iso-hotspot"
+      style={{ pointerEvents: active ? "auto" : "none" }}
+      onClick={activate}
+      onKeyDown={onKeyDown}
+    >
+      <title>{ariaLabel}</title>
+      <ellipse cx={ground.x} cy={ground.y + 4} rx="16" ry="7" fill="#5C5048" opacity="0.16" />
+      <line
+        x1={ground.x}
+        y1={ground.y}
+        x2={anchor.x}
+        y2={anchor.y + 8}
+        stroke="#C4B8A4"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <rect
+        className="iso-hotspot-chip"
+        x={chipX}
+        y={chipY}
+        width="116"
+        height="30"
+        rx="15"
+        fill="#F7F3EA"
+        stroke="#D4C4A8"
+        strokeWidth="1.15"
+      />
+      <circle cx={chipX + 16} cy={chipY + 15} r="8" fill={accent} />
+      <path
+        d={`M ${chipX + 13.2} ${chipY + 11.4} L ${chipX + 19.4} ${chipY + 15} L ${chipX + 13.2} ${chipY + 18.6}`}
+        fill="none"
+        stroke="#F7F3EA"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <text
+        x={chipX + 68}
+        y={chipY + 19}
+        fill="#5C5048"
+        fontFamily="var(--font-display), ui-serif, Georgia, serif"
+        fontSize="12"
+        fontWeight="500"
+        letterSpacing="0.04em"
+        textAnchor="middle"
+      >
+        {label}
+      </text>
+    </g>
   );
 }
 

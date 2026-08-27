@@ -8,14 +8,12 @@ import { IsoTonbridgeEnvironment } from "./environments/IsoTonbridgeEnvironment"
 import { NewZealandEnvironment } from "./environments/NewZealandEnvironment";
 import { SanFranciscoEnvironment } from "./environments/SanFranciscoEnvironment";
 import { ShanghaiEnvironment } from "./environments/ShanghaiEnvironment";
-import { TonbridgeEnvironment } from "./environments/TonbridgeEnvironment";
 import type { EnvironmentProps } from "./environments/types";
 import { useEraLayerStyle } from "./use-era-layer-style";
 
 const ENVIRONMENTS: Record<EraId, ComponentType<EnvironmentProps>> = {
   birth: NewZealandEnvironment,
   childhood: ShanghaiEnvironment,
-  highschool: TonbridgeEnvironment,
   sixthform: IsoTonbridgeEnvironment,
   college: BerkeleyEnvironment,
   now: SanFranciscoEnvironment,
@@ -23,9 +21,15 @@ const ENVIRONMENTS: Record<EraId, ComponentType<EnvironmentProps>> = {
 
 type SceneStageProps = {
   progress: MotionValue<number>;
+  onOpenHighStreet?: () => void;
+  onOpenBasketball?: () => void;
 };
 
-export function SceneStage({ progress }: SceneStageProps) {
+export function SceneStage({
+  progress,
+  onOpenHighStreet,
+  onOpenBasketball,
+}: SceneStageProps) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {ERAS.map((era) => {
@@ -36,9 +40,13 @@ export function SceneStage({ progress }: SceneStageProps) {
             key={era.id}
             progress={progress}
             at={era.at}
-            allowInteraction={era.id === "childhood"}
+            allowInteraction={era.id === "childhood" || era.id === "sixthform"}
           >
-            <Environment progress={progress} />
+            <Environment
+              progress={progress}
+              onOpenHighStreet={era.id === "sixthform" ? onOpenHighStreet : undefined}
+              onOpenBasketball={era.id === "sixthform" ? onOpenBasketball : undefined}
+            />
           </EraLayer>
         );
       })}

@@ -16,9 +16,12 @@ const SLATE = { top: "#8A6C70", left: "#5C464C", right: "#72585E" };
 const GRASS = { top: "#C5E09A", left: "#8FB872", right: "#A4CC84" };
 const GRASS_STRIPE = "#8FBF72";
 const COURT = { top: "#6FCF8A", left: "#4EAE6C", right: "#5EBE7A" };
+const BASKETBALL = { top: "#7EB8D4", left: "#5A96B4", right: "#6AA8C4" };
 const ASTRO = { top: "#62C878", left: "#3EA85C", right: "#50B86A" };
 const TRACK = { top: "#E29484", left: "#C47468", right: "#D48478" };
 const SILVER = { top: "#D8DCE0", left: "#A8B0B6", right: "#C0C6CC" };
+const FENCE = { top: "#D4D8DC", left: "#8E98A0", right: "#A4AEB6" };
+const MESH = "#B4BEC4";
 const PATH = { top: "#E8DFD0", left: "#C8BFB0", right: "#D8CFC0" };
 const LOT = { top: "#C8C4BE", left: "#A8A49E", right: "#B8B4AE" };
 const ROAD = { top: "#D2CEC8", left: "#B4AFA8", right: "#C2BDB6" };
@@ -67,6 +70,15 @@ const TENNIS_X = ROWANS_X + ROWANS_W + 0.28;
 const TENNIS_Y = SPORTS_STREET_Y - TENNIS_D - 0.12;
 const SPORTS_STREET_X = ROWANS_X - 0.4;
 const SPORTS_STREET_W = FIFTY.x + 0.15 - SPORTS_STREET_X;
+const BASKETBALL_X = ROWANS_X + 0.2;
+const BASKETBALL_Y = SPORTS_STREET_Y + SPORTS_STREET_D + 2.75;
+const BASKETBALL_W = 6.1;
+const BASKETBALL_D = 2.25;
+
+export const BASKETBALL_HOTSPOT = {
+  x: BASKETBALL_X + BASKETBALL_W / 2,
+  y: BASKETBALL_Y + BASKETBALL_D / 2,
+} as const;
 
 export function TonbridgeSchool({ reduceMotion }: { reduceMotion: boolean }) {
   return (
@@ -107,9 +119,6 @@ function SchoolFields({ reduceMotion }: { reduceMotion: boolean }) {
       <BasketballCourt />
       <AthleticsTrack />
       <TreeLines reduceMotion={reduceMotion} />
-      <FieldLabel x={HEAD.x + HEAD.w * 0.5} y={HEAD.y + HEAD.d * 0.52} text="The Head" />
-      <FieldLabel x={FIFTY.x + FIFTY.w * 0.5} y={FIFTY.y + FIFTY.d * 0.5} text="The Fifty" />
-      <FieldLabel x={TRACK_CX} y={TRACK_CY} text="Wilmot Track" />
     </g>
   );
 }
@@ -183,7 +192,6 @@ function TheQuad() {
           right={shade(color, -12)}
         />
       ))}
-      <FieldLabel x={INNER_X + QUAD_INNER_W * 0.5} y={INNER_Y + INNER_D * 0.45} text="The Quad" />
     </g>
   );
 }
@@ -208,7 +216,6 @@ function VisitorsCourt() {
           right={shade(color, -12)}
         />
       ))}
-      <FieldLabel x={EAST_INNER_X + EAST_COURT_W * 0.5} y={INNER_Y + 0.45} text="Visitors" />
     </g>
   );
 }
@@ -478,18 +485,69 @@ function BoardingHouses() {
 }
 
 function BasketballCourt() {
-  const x = ROWANS_X + 0.2;
-  const y = SPORTS_STREET_Y + SPORTS_STREET_D + 2.75;
-  const w = 6.1;
-  const d = 2.25;
+  const x = BASKETBALL_X;
+  const y = BASKETBALL_Y;
+  const w = BASKETBALL_W;
+  const d = BASKETBALL_D;
+  const midY = y + d * 0.5;
 
   return (
     <g data-landmark="basketball">
       <IsoSlab x={x - 0.35} y={y - 0.15} w={w + 0.7} d={d + 0.3} h={0.1} {...PATH} />
-      <Court x={x} y={y} w={w} d={d} fill={COURT} lines />
-      <IsoBox x={x + 0.12} y={y + d * 0.5 - 0.04} z={0.16} w={0.08} d={0.08} h={0.85} top="#F4F0E8" left="#D0CCC4" right="#E0DCD4" />
-      <IsoBox x={x + w - 0.2} y={y + d * 0.5 - 0.04} z={0.16} w={0.08} d={0.08} h={0.85} top="#F4F0E8" left="#D0CCC4" right="#E0DCD4" />
-      <FieldLabel x={x + w * 0.5} y={y + d * 0.5} text="Basketball" />
+      <Court x={x} y={y} w={w} d={d} fill={BASKETBALL} lines />
+      <BasketballHoop x={x + 0.08} y={midY} facing={1} />
+      <BasketballHoop x={x + w - 0.2} y={midY} facing={-1} />
+    </g>
+  );
+}
+
+function BasketballHoop({
+  x,
+  y,
+  facing,
+}: {
+  x: number;
+  y: number;
+  facing: 1 | -1;
+}) {
+  const z = 0.16;
+  const postH = 1.22;
+  const boardX = facing === 1 ? x + 0.1 : x - 0.1;
+  const rim = iso(x + facing * 0.32, y, z + 1.02);
+
+  return (
+    <g>
+      <IsoBox
+        x={x}
+        y={y - 0.07}
+        z={z}
+        w={0.14}
+        d={0.14}
+        h={postH}
+        top="#E8A07A"
+        left="#C47858"
+        right="#D48A68"
+      />
+      <IsoBox
+        x={boardX}
+        y={y - 0.38}
+        z={z + 0.9}
+        w={0.12}
+        d={0.76}
+        h={0.48}
+        top="#F7F4EE"
+        left="#D4CCC0"
+        right="#E6DED4"
+      />
+      <ellipse
+        cx={rim.x}
+        cy={rim.y}
+        rx="8"
+        ry="4.5"
+        fill="none"
+        stroke="#E08A5A"
+        strokeWidth="2.2"
+      />
     </g>
   );
 }
@@ -506,7 +564,6 @@ function SportsCenter() {
       <IsoBox x={x} y={y} z={0.16} w={w} d={d} h={h} {...SILVER} />
       <IsoWindows face="left" x={x} y={y} z={0.16} w={w} d={d} h={h} cols={7} rows={1} v0={0.28} v1={0.78} fill="#F4EFE4" />
       <IsoBox x={x + 0.2} y={y + 0.2} z={0.16 + h} w={w - 0.4} d={d - 0.4} h={0.12} top="#E8ECF0" left="#C4C8CC" right="#D4D8DC" />
-      <FieldLabel x={x + w * 0.5} y={y + d * 0.55} text="Sports Centre" />
     </g>
   );
 }
@@ -529,16 +586,122 @@ function TennisCourts() {
           right="#E0DCD4"
         />
       ))}
-      <FieldLabel x={TENNIS_X + TENNIS_W * 0.5} y={TENNIS_Y + TENNIS_D * 0.5} text="Tennis" />
     </g>
   );
 }
 
 function RowansAstro() {
+  const pad = 0.1;
+
   return (
     <g data-landmark="rowans-astro">
-      <Court x={ROWANS_X} y={ROWANS_Y} w={ROWANS_W} d={ROWANS_D} fill={ASTRO} lines />
-      <FieldLabel x={ROWANS_X + ROWANS_W * 0.5} y={ROWANS_Y + ROWANS_D * 0.5} text="Rowan's Astro" />
+      <Cage
+        x={ROWANS_X - pad}
+        y={ROWANS_Y - pad}
+        w={ROWANS_W + pad * 2}
+        d={ROWANS_D + pad * 2}
+        h={1.45}
+      >
+        <Court x={ROWANS_X} y={ROWANS_Y} w={ROWANS_W} d={ROWANS_D} fill={ASTRO} lines />
+      </Cage>
+    </g>
+  );
+}
+
+function Cage({
+  x,
+  y,
+  w,
+  d,
+  h,
+  children,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  d: number;
+  h: number;
+  children: React.ReactNode;
+}) {
+  const z = 0.16;
+  const t = 0.1;
+
+  return (
+    <g>
+      <CageMesh
+        a={[x, y, z + h]}
+        b={[x + w, y, z + h]}
+        c={[x + w, y, z]}
+        e={[x, y, z]}
+        bars={6}
+      />
+      <CageMesh
+        a={[x, y, z + h]}
+        b={[x, y + d, z + h]}
+        c={[x, y + d, z]}
+        e={[x, y, z]}
+        bars={4}
+      />
+      <IsoBox x={x} y={y} z={z} w={t} d={t} h={h} {...FENCE} />
+      <IsoBox x={x + w - t} y={y} z={z} w={t} d={t} h={h} {...FENCE} />
+      {children}
+      <CageMesh
+        a={[x, y + d, z + h]}
+        b={[x + w, y + d, z + h]}
+        c={[x + w, y + d, z]}
+        e={[x, y + d, z]}
+        bars={6}
+      />
+      <CageMesh
+        a={[x + w, y, z + h]}
+        b={[x + w, y + d, z + h]}
+        c={[x + w, y + d, z]}
+        e={[x + w, y, z]}
+        bars={4}
+      />
+      <IsoBox x={x} y={y + d - t} z={z} w={t} d={t} h={h} {...FENCE} />
+      <IsoBox x={x + w - t} y={y + d - t} z={z} w={t} d={t} h={h} {...FENCE} />
+      <IsoBox x={x + w * 0.5 - t * 0.5} y={y} z={z} w={t} d={t} h={h} {...FENCE} />
+      <IsoBox x={x + w * 0.5 - t * 0.5} y={y + d - t} z={z} w={t} d={t} h={h} {...FENCE} />
+      <IsoBox x={x} y={y} z={z + h - 0.07} w={w} d={t} h={0.07} {...FENCE} />
+      <IsoBox x={x} y={y + d - t} z={z + h - 0.07} w={w} d={t} h={0.07} {...FENCE} />
+      <IsoBox x={x} y={y} z={z + h - 0.07} w={t} d={d} h={0.07} {...FENCE} />
+      <IsoBox x={x + w - t} y={y} z={z + h - 0.07} w={t} d={d} h={0.07} {...FENCE} />
+    </g>
+  );
+}
+
+function CageMesh({
+  a,
+  b,
+  c,
+  e,
+  bars,
+}: {
+  a: [number, number, number];
+  b: [number, number, number];
+  c: [number, number, number];
+  e: [number, number, number];
+  bars: number;
+}) {
+  return (
+    <g>
+      <polygon points={isoPoints([a, b, c, e])} fill={MESH} opacity="0.32" />
+      {Array.from({ length: bars }, (_, index) => {
+        const t = (index + 1) / (bars + 1);
+        const top: [number, number, number] = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2]];
+        const bot: [number, number, number] = [e[0] + (c[0] - e[0]) * t, e[1] + (c[1] - e[1]) * t, e[2]];
+        return (
+          <polyline
+            key={index}
+            points={isoPoints([top, bot])}
+            fill="none"
+            stroke={MESH}
+            strokeWidth="1"
+            opacity="0.85"
+          />
+        );
+      })}
     </g>
   );
 }
@@ -684,24 +847,6 @@ function TreeLines({ reduceMotion }: { reduceMotion: boolean }) {
         />
       ))}
     </g>
-  );
-}
-
-function FieldLabel({ x, y, text }: { x: number; y: number; text: string }) {
-  const point = iso(x, y, 0.22);
-  return (
-    <text
-      x={point.x}
-      y={point.y}
-      fill="#5C5048"
-      fillOpacity="0.55"
-      fontFamily="ui-sans-serif, system-ui, sans-serif"
-      fontSize="11"
-      letterSpacing="0.12em"
-      textAnchor="middle"
-    >
-      {text}
-    </text>
   );
 }
 
