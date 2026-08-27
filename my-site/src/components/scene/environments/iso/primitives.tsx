@@ -69,7 +69,7 @@ export function IsoSlab({
   top,
   left,
   right,
-}: IsoBoxProps) {
+}: Omit<IsoBoxProps, "h"> & { h?: number }) {
   return <IsoBox x={x} y={y} z={z} w={w} d={d} h={h} top={top} left={left} right={right} />;
 }
 
