@@ -22,16 +22,7 @@ import type {
   ToastKind,
 } from "@/lib/basketball/types";
 import { Court } from "./Court";
-import {
-  ControlsCard,
-  IDLE_KEYS,
-  Panel,
-  readPressed,
-  samePressed,
-  Scoreboard,
-  ToastLine,
-  type PressedKeys,
-} from "./Hud";
+import { ControlsCard, Panel, Scoreboard, ToastLine } from "./Hud";
 import { ActorSprite, BallSprite, METER_H, METER_RANGE, ShotMeter } from "./Sprites";
 
 const POSES: Pose[] = ["run", "shoot", "reach"];
@@ -236,10 +227,9 @@ type Hud = {
   toast: string | null;
   toastKind: ToastKind;
   winner: Team | null;
-  pressed: PressedKeys;
 };
 
-function readHud(state: GameState, held: Set<string>): Hud {
+function readHud(state: GameState): Hud {
   return {
     scoreUser: state.scoreUser,
     scoreBot: state.scoreBot,
@@ -249,7 +239,6 @@ function readHud(state: GameState, held: Set<string>): Hud {
     toast: state.toast?.text ?? null,
     toastKind: state.toast?.kind ?? "info",
     winner: state.winner,
-    pressed: readPressed(held),
   };
 }
 
@@ -262,15 +251,14 @@ function sameHud(a: Hud, b: Hud) {
     a.shotClock === b.shotClock &&
     a.toast === b.toast &&
     a.toastKind === b.toastKind &&
-    a.winner === b.winner &&
-    samePressed(a.pressed, b.pressed)
+    a.winner === b.winner
   );
 }
 
 export function BasketballGame() {
   const reduceMotion = useReducedMotion();
   const [game] = useState(() => createGame("normal"));
-  const [hud, setHud] = useState<Hud>(() => readHud(game, new Set()));
+  const [hud, setHud] = useState<Hud>(() => readHud(game));
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -283,14 +271,7 @@ export function BasketballGame() {
   const reduceRef = useRef(false);
 
   const playing = started && !paused && hud.phase !== "over";
-  const keys = useGameKeys(playing);
-
-  const syncPressed = () => {
-    const next = { ...hudRef.current, pressed: readPressed(keys.current.held) };
-    if (sameHud(hudRef.current, next)) return;
-    hudRef.current = next;
-    setHud(next);
-  };
+  const { keys, pressed } = useGameKeys(playing);
 
   const pressPad = (key: PadKey) => {
     if (key === "p") {
@@ -298,37 +279,32 @@ export function BasketballGame() {
       return;
     }
     keys.current.press(key);
-    syncPressed();
   };
 
   const releasePad = (key: PadKey) => {
     keys.current.release(key);
-    syncPressed();
   };
 
   useEffect(() => {
     reduceRef.current = Boolean(reduceMotion);
   }, [reduceMotion]);
 
-  const step = useCallback(
-    (dt: number) => {
-      const pad = keys.current;
-      advance(game, pad.input, decideBot(game, dt), dt);
-      pad.clearEdges();
-    },
-    [game, keys],
-  );
+  const step = (dt: number) => {
+    const pad = keys.current;
+    advance(game, pad.input, decideBot(game, dt), dt);
+    pad.clearEdges();
+  };
 
-  const render = useCallback(() => {
+  const render = () => {
     const nodes = nodesRef.current;
     if (nodes) paintScene(nodes, game, reduceRef.current);
 
-    const next = readHud(game, keys.current.held);
+    const next = readHud(game);
     if (!sameHud(hudRef.current, next)) {
       hudRef.current = next;
       setHud(next);
     }
-  }, [game, keys]);
+  };
 
   useGameLoop({ active: playing, step, render });
 
@@ -352,7 +328,7 @@ export function BasketballGame() {
   const beginMatch = useCallback(
     (value: Difficulty) => {
       resetGame(game, value);
-      const next = readHud(game, keys.current.held);
+      const next = readHud(game);
       hudRef.current = next;
       setHud(next);
       setPaused(false);
@@ -361,7 +337,7 @@ export function BasketballGame() {
       if (nodes) paintScene(nodes, game, reduceRef.current);
       focusSurface();
     },
-    [game, focusSurface, keys],
+    [game, focusSurface],
   );
 
   const idle = !started || hud.phase === "over";
@@ -435,7 +411,7 @@ export function BasketballGame() {
       />
       <ControlsCard
         onOffense={hud.possession === "user"}
-        pressed={playing ? hud.pressed : IDLE_KEYS}
+        pressed={pressed}
         interactive={playing}
         onPress={pressPad}
         onRelease={releasePad}

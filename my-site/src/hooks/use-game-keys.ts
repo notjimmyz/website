@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { emptyInput, type Input } from "@/lib/basketball/types";
 
 const MOVE_KEYS = new Set([
@@ -34,6 +34,44 @@ export type PadKey =
   | "enter"
   | "p";
 
+export type PressedKeys = {
+  w: boolean;
+  a: boolean;
+  s: boolean;
+  d: boolean;
+  shift: boolean;
+  space: boolean;
+  j: boolean;
+  enter: boolean;
+  p: boolean;
+};
+
+export const IDLE_KEYS: PressedKeys = {
+  w: false,
+  a: false,
+  s: false,
+  d: false,
+  shift: false,
+  space: false,
+  j: false,
+  enter: false,
+  p: false,
+};
+
+function readPressed(held: Set<string>): PressedKeys {
+  return {
+    w: held.has("w") || held.has("arrowup"),
+    a: held.has("a") || held.has("arrowleft"),
+    s: held.has("s") || held.has("arrowdown"),
+    d: held.has("d") || held.has("arrowright"),
+    shift: held.has("shift"),
+    space: held.has(" "),
+    j: held.has("j"),
+    enter: held.has("enter"),
+    p: held.has("p"),
+  };
+}
+
 export type GameKeys = {
   input: Input;
   /** Union of keyboard and on-screen key holds. */
@@ -46,7 +84,10 @@ export type GameKeys = {
   release: (key: PadKey) => void;
 };
 
-export function useGameKeys(active: boolean): RefObject<GameKeys> {
+export function useGameKeys(active: boolean): {
+  keys: RefObject<GameKeys>;
+  pressed: PressedKeys;
+} {
   const ref = useRef<GameKeys>({
     input: emptyInput(),
     held: new Set(),
@@ -56,6 +97,12 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
     press: () => {},
     release: () => {},
   });
+  const [pressed, setPressed] = useState<PressedKeys>(IDLE_KEYS);
+  const [wasActive, setWasActive] = useState(active);
+  if (active !== wasActive) {
+    setWasActive(active);
+    if (!active) setPressed(IDLE_KEYS);
+  }
 
   useEffect(() => {
     const keyboard = new Set<string>();
@@ -83,6 +130,10 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       input.shootHeld = held.has(" ");
     };
 
+    const publish = () => {
+      setPressed(readPressed(held));
+    };
+
     const setKey = (source: Set<string>, key: string, down: boolean) => {
       if (!HANDLED.has(key)) return;
 
@@ -101,6 +152,7 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       if (was && !is && key === " ") state.input.shootReleased = true;
 
       syncMovement();
+      publish();
     };
 
     state.clearEdges = () => {
@@ -114,7 +166,7 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       state.pausePressed = false;
     };
 
-    const reset = () => {
+    const reset = (announce: boolean) => {
       keyboard.clear();
       pointer.clear();
       held.clear();
@@ -124,10 +176,11 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       input.sprint = false;
       input.shootHeld = false;
       state.clearEdges();
+      if (announce) publish();
     };
 
     if (!active) {
-      reset();
+      reset(false);
       return;
     }
 
@@ -168,19 +221,21 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       setKey(keyboard, key, false);
     };
 
+    const onBlur = () => reset(true);
+
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", reset);
+    window.addEventListener("blur", onBlur);
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", reset);
+      window.removeEventListener("blur", onBlur);
       state.press = () => {};
       state.release = () => {};
-      reset();
+      reset(false);
     };
   }, [active]);
 
-  return ref;
+  return { keys: ref, pressed: active ? pressed : IDLE_KEYS };
 }

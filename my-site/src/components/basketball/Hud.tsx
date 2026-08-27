@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { PadKey } from "@/hooks/use-game-keys";
+import type { PadKey, PressedKeys } from "@/hooks/use-game-keys";
 import { DIFFICULTY_LABEL } from "@/lib/basketball/bot";
 import { TARGET_SCORE } from "@/lib/basketball/constants";
 import type { Difficulty, Team, ToastKind } from "@/lib/basketball/types";
@@ -57,58 +57,6 @@ function Side({ label, value, live }: { label: string; value: number; live: bool
   );
 }
 
-export type PressedKeys = {
-  w: boolean;
-  a: boolean;
-  s: boolean;
-  d: boolean;
-  shift: boolean;
-  space: boolean;
-  j: boolean;
-  enter: boolean;
-  p: boolean;
-};
-
-export const IDLE_KEYS: PressedKeys = {
-  w: false,
-  a: false,
-  s: false,
-  d: false,
-  shift: false,
-  space: false,
-  j: false,
-  enter: false,
-  p: false,
-};
-
-export function readPressed(held: Set<string>): PressedKeys {
-  return {
-    w: held.has("w") || held.has("arrowup"),
-    a: held.has("a") || held.has("arrowleft"),
-    s: held.has("s") || held.has("arrowdown"),
-    d: held.has("d") || held.has("arrowright"),
-    shift: held.has("shift"),
-    space: held.has(" "),
-    j: held.has("j"),
-    enter: held.has("enter"),
-    p: held.has("p"),
-  };
-}
-
-export function samePressed(a: PressedKeys, b: PressedKeys) {
-  return (
-    a.w === b.w &&
-    a.a === b.a &&
-    a.s === b.s &&
-    a.d === b.d &&
-    a.shift === b.shift &&
-    a.space === b.space &&
-    a.j === b.j &&
-    a.enter === b.enter &&
-    a.p === b.p
-  );
-}
-
 export function ControlsCard({
   onOffense,
   pressed,
@@ -132,7 +80,7 @@ export function ControlsCard({
       </p>
       <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-4">
         <PadGroup label="Move">
-          <div className="grid w-[7.75rem] grid-cols-3 gap-1">
+          <div className="grid w-fit grid-cols-3 gap-1">
             <span />
             <Keycap
               label="W"

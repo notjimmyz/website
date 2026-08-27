@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type GameLoopOptions = {
   active: boolean;
@@ -19,6 +19,14 @@ export function useGameLoop({
   fixedDt = 1 / 60,
   maxStepsPerFrame = 5,
 }: GameLoopOptions) {
+  const stepRef = useRef(step);
+  const renderRef = useRef(render);
+
+  useEffect(() => {
+    stepRef.current = step;
+    renderRef.current = render;
+  }, [render, step]);
+
   useEffect(() => {
     if (!active) return;
 
@@ -35,14 +43,14 @@ export function useGameLoop({
 
       let steps = 0;
       while (accumulator >= fixedDt && steps < maxStepsPerFrame) {
-        step(fixedDt);
+        stepRef.current(fixedDt);
         accumulator -= fixedDt;
         steps += 1;
       }
 
       if (steps === maxStepsPerFrame) accumulator = 0;
 
-      render();
+      renderRef.current();
     };
 
     // A hidden tab stops firing frames; reset the clock so the simulation does
@@ -59,5 +67,5 @@ export function useGameLoop({
       cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [active, fixedDt, maxStepsPerFrame, render, step]);
+  }, [active, fixedDt, maxStepsPerFrame]);
 }
