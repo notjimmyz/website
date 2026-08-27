@@ -2,7 +2,7 @@
 
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useGameKeys } from "@/hooks/use-game-keys";
+import { useGameKeys, type PadKey } from "@/hooks/use-game-keys";
 import { useGameLoop } from "@/hooks/use-game-loop";
 import { decideBot } from "@/lib/basketball/bot";
 import { project, screenPan, SCREEN_H, SCREEN_W, SIN_PITCH } from "@/lib/basketball/camera";
@@ -22,7 +22,16 @@ import type {
   ToastKind,
 } from "@/lib/basketball/types";
 import { Court } from "./Court";
-import { ControlsCard, Panel, Scoreboard, ToastLine } from "./Hud";
+import {
+  ControlsCard,
+  IDLE_KEYS,
+  Panel,
+  readPressed,
+  samePressed,
+  Scoreboard,
+  ToastLine,
+  type PressedKeys,
+} from "./Hud";
 import { ActorSprite, BallSprite, METER_H, METER_RANGE, ShotMeter } from "./Sprites";
 
 const POSES: Pose[] = ["run", "shoot", "reach"];
@@ -227,9 +236,10 @@ type Hud = {
   toast: string | null;
   toastKind: ToastKind;
   winner: Team | null;
+  pressed: PressedKeys;
 };
 
-function readHud(state: GameState): Hud {
+function readHud(state: GameState, held: Set<string>): Hud {
   return {
     scoreUser: state.scoreUser,
     scoreBot: state.scoreBot,
@@ -239,6 +249,7 @@ function readHud(state: GameState): Hud {
     toast: state.toast?.text ?? null,
     toastKind: state.toast?.kind ?? "info",
     winner: state.winner,
+    pressed: readPressed(held),
   };
 }
 
@@ -251,14 +262,15 @@ function sameHud(a: Hud, b: Hud) {
     a.shotClock === b.shotClock &&
     a.toast === b.toast &&
     a.toastKind === b.toastKind &&
-    a.winner === b.winner
+    a.winner === b.winner &&
+    samePressed(a.pressed, b.pressed)
   );
 }
 
 export function BasketballGame() {
   const reduceMotion = useReducedMotion();
   const [game] = useState(() => createGame("normal"));
-  const [hud, setHud] = useState<Hud>(() => readHud(game));
+  const [hud, setHud] = useState<Hud>(() => readHud(game, new Set()));
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -272,6 +284,27 @@ export function BasketballGame() {
 
   const playing = started && !paused && hud.phase !== "over";
   const keys = useGameKeys(playing);
+
+  const syncPressed = () => {
+    const next = { ...hudRef.current, pressed: readPressed(keys.current.held) };
+    if (sameHud(hudRef.current, next)) return;
+    hudRef.current = next;
+    setHud(next);
+  };
+
+  const pressPad = (key: PadKey) => {
+    if (key === "p") {
+      setPaused(true);
+      return;
+    }
+    keys.current.press(key);
+    syncPressed();
+  };
+
+  const releasePad = (key: PadKey) => {
+    keys.current.release(key);
+    syncPressed();
+  };
 
   useEffect(() => {
     reduceRef.current = Boolean(reduceMotion);
@@ -290,12 +323,12 @@ export function BasketballGame() {
     const nodes = nodesRef.current;
     if (nodes) paintScene(nodes, game, reduceRef.current);
 
-    const next = readHud(game);
+    const next = readHud(game, keys.current.held);
     if (!sameHud(hudRef.current, next)) {
       hudRef.current = next;
       setHud(next);
     }
-  }, [game]);
+  }, [game, keys]);
 
   useGameLoop({ active: playing, step, render });
 
@@ -319,7 +352,7 @@ export function BasketballGame() {
   const beginMatch = useCallback(
     (value: Difficulty) => {
       resetGame(game, value);
-      const next = readHud(game);
+      const next = readHud(game, keys.current.held);
       hudRef.current = next;
       setHud(next);
       setPaused(false);
@@ -328,7 +361,7 @@ export function BasketballGame() {
       if (nodes) paintScene(nodes, game, reduceRef.current);
       focusSurface();
     },
-    [game, focusSurface],
+    [game, focusSurface, keys],
   );
 
   const idle = !started || hud.phase === "over";
@@ -400,7 +433,13 @@ export function BasketballGame() {
         shotClock={Math.min(SHOT_CLOCK, hud.shotClock)}
         difficulty={difficulty}
       />
-      <ControlsCard onOffense={hud.possession === "user"} />
+      <ControlsCard
+        onOffense={hud.possession === "user"}
+        pressed={playing ? hud.pressed : IDLE_KEYS}
+        interactive={playing}
+        onPress={pressPad}
+        onRelease={releasePad}
+      />
       <ToastLine text={hud.toast ?? prompt} kind={hud.toast ? hud.toastKind : "info"} />
 
       <p className="sr-only" aria-live="polite">

@@ -10,7 +10,7 @@ export const SCREEN_CY = 493;
 export const CAM_Y = 130;
 export const CAM_HEIGHT = 52;
 export const CAM_PITCH = (24 * Math.PI) / 180;
-export const FOCAL = 2910;
+export const FOCAL = 3080;
 
 export const COS_PITCH = Math.cos(CAM_PITCH);
 export const SIN_PITCH = Math.sin(CAM_PITCH);

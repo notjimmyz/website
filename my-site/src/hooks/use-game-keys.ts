@@ -23,35 +23,50 @@ const HANDLED = new Set([
   "p",
 ]);
 
+export type PadKey =
+  | "w"
+  | "a"
+  | "s"
+  | "d"
+  | "shift"
+  | " "
+  | "j"
+  | "enter"
+  | "p";
+
 export type GameKeys = {
   input: Input;
+  /** Union of keyboard and on-screen key holds. */
+  held: Set<string>;
   /** Edge flags consumed by the simulation each frame. */
   clearEdges: () => void;
   pausePressed: boolean;
   clearPause: () => void;
+  press: (key: PadKey) => void;
+  release: (key: PadKey) => void;
 };
 
 export function useGameKeys(active: boolean): RefObject<GameKeys> {
   const ref = useRef<GameKeys>({
     input: emptyInput(),
+    held: new Set(),
     clearEdges: () => {},
     pausePressed: false,
     clearPause: () => {},
+    press: () => {},
+    release: () => {},
   });
 
   useEffect(() => {
-    const held = new Set<string>();
+    const keyboard = new Set<string>();
+    const pointer = new Set<string>();
     const state = ref.current;
+    const held = state.held;
 
-    state.clearEdges = () => {
-      state.input.shootPressed = false;
-      state.input.shootReleased = false;
-      state.input.actionPressed = false;
-      state.input.startPressed = false;
-    };
-
-    state.clearPause = () => {
-      state.pausePressed = false;
+    const rebuildHeld = () => {
+      held.clear();
+      keyboard.forEach((key) => held.add(key));
+      pointer.forEach((key) => held.add(key));
     };
 
     const syncMovement = () => {
@@ -68,7 +83,40 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       input.shootHeld = held.has(" ");
     };
 
+    const setKey = (source: Set<string>, key: string, down: boolean) => {
+      if (!HANDLED.has(key)) return;
+
+      const was = held.has(key);
+      if (down) source.add(key);
+      else source.delete(key);
+      rebuildHeld();
+      const is = held.has(key);
+
+      if (!was && is) {
+        if (key === " ") state.input.shootPressed = true;
+        if (key === "j") state.input.actionPressed = true;
+        if (key === "enter") state.input.startPressed = true;
+        if (key === "p") state.pausePressed = true;
+      }
+      if (was && !is && key === " ") state.input.shootReleased = true;
+
+      syncMovement();
+    };
+
+    state.clearEdges = () => {
+      state.input.shootPressed = false;
+      state.input.shootReleased = false;
+      state.input.actionPressed = false;
+      state.input.startPressed = false;
+    };
+
+    state.clearPause = () => {
+      state.pausePressed = false;
+    };
+
     const reset = () => {
+      keyboard.clear();
+      pointer.clear();
       held.clear();
       const input = state.input;
       input.moveX = 0;
@@ -83,6 +131,9 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       return;
     }
 
+    state.press = (key) => setKey(pointer, key, true);
+    state.release = (key) => setKey(pointer, key, false);
+
     const normalize = (event: KeyboardEvent) => {
       if (event.key === "Shift") return "shift";
       return event.key.toLowerCase();
@@ -91,7 +142,9 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
     // Leave keys alone while a control has focus, so the back button and the
     // difficulty buttons stay operable from the keyboard.
     const onControl = (target: EventTarget | null) =>
-      target instanceof Element && target.closest("button, a, input, select, textarea") !== null;
+      target instanceof Element &&
+      target.closest("[data-game-pad]") === null &&
+      target.closest("button, a, input, select, textarea") !== null;
 
     const onKeyDown = (event: KeyboardEvent) => {
       const key = normalize(event);
@@ -103,14 +156,7 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       event.preventDefault();
       if (event.repeat) return;
 
-      held.add(key);
-
-      if (key === " ") state.input.shootPressed = true;
-      if (key === "j") state.input.actionPressed = true;
-      if (key === "enter") state.input.startPressed = true;
-      if (key === "p") state.pausePressed = true;
-
-      syncMovement();
+      setKey(keyboard, key, true);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
@@ -119,11 +165,7 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       if (onControl(event.target)) return;
 
       event.preventDefault();
-      held.delete(key);
-
-      if (key === " ") state.input.shootReleased = true;
-
-      syncMovement();
+      setKey(keyboard, key, false);
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -134,6 +176,8 @@ export function useGameKeys(active: boolean): RefObject<GameKeys> {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", reset);
+      state.press = () => {};
+      state.release = () => {};
       reset();
     };
   }, [active]);

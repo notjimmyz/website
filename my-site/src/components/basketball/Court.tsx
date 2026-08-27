@@ -28,7 +28,9 @@ import { CAGE, COURT, HOOP, SHADOW, SURROUNDS } from "@/lib/basketball/palette";
 
 const APRON_X = COURT_HALF_WIDTH + 2.6;
 const APRON_BACK = -3.4;
-const APRON_FRONT = COURT_DEPTH + 3.2;
+// The tarmac runs off the bottom of the frame so the camera sits inside the
+// court rather than looking at it across a lawn.
+const APRON_FRONT = 47;
 const FENCE_BACK_Y = -6;
 const FENCE_SIDE_X = 29.5;
 const FENCE_HEIGHT = 10;
@@ -36,6 +38,7 @@ const GROUND_BACK = -44;
 
 const LINE = COURT.line;
 const LINE_WIDTH = 2.6;
+const NET_STRINGS = Array.from({ length: 9 }, (_, i) => (i / 8) * Math.PI * 2);
 
 export const Court = memo(function Court() {
   return (
@@ -150,10 +153,20 @@ function Ground() {
               [-120, y0 + 3.6],
             ])}
             fill={SURROUNDS.grassStripe}
-            opacity="0.55"
+            opacity="0.3"
           />
         );
       })}
+      <polygon
+        points={projectPolygon([
+          [-120, FENCE_BACK_Y],
+          [120, FENCE_BACK_Y],
+          [120, FENCE_BACK_Y + 2.4],
+          [-120, FENCE_BACK_Y + 2.4],
+        ])}
+        fill={SHADOW}
+        opacity="0.12"
+      />
       <polygon
         points={projectPolygon([
           [-120, GROUND_BACK],
@@ -402,17 +415,17 @@ function Hoop() {
         points={projectPolygon([
           [-0.42, -2.2, 0],
           [0.42, -2.2, 0],
-          [0.42, -2.2, 11.2],
-          [-0.42, -2.2, 11.2],
+          [0.42, -2.2, 10.4],
+          [-0.42, -2.2, 10.4],
         ])}
         fill={HOOP.pole}
       />
       <polygon
         points={projectPolygon([
-          [-0.26, -2.2, 10.6],
-          [0.26, -2.2, 10.6],
-          [0.26, BACKBOARD_Y, 12.1],
-          [-0.26, BACKBOARD_Y, 12.1],
+          [-0.3, -2.2, 9.9],
+          [0.3, -2.2, 9.9],
+          [0.3, BACKBOARD_Y, 11.6],
+          [-0.3, BACKBOARD_Y, 11.6],
         ])}
         fill={HOOP.poleShade}
       />
@@ -424,7 +437,7 @@ function Hoop() {
           [-BACKBOARD_HALF_WIDTH, BACKBOARD_Y, BACKBOARD_TOP],
         ])}
         fill={HOOP.board}
-        opacity="0.82"
+        opacity="0.94"
         stroke={HOOP.boardEdge}
         strokeWidth="2.2"
       />
@@ -455,8 +468,19 @@ function Hoop() {
             L ${(rim.x + rimSize.rx).toFixed(1)} ${rim.y.toFixed(1)}
             A ${rimSize.rx.toFixed(1)} ${rimSize.ry.toFixed(1)} 0 0 1 ${(rim.x - rimSize.rx).toFixed(1)} ${rim.y.toFixed(1)} Z`}
         fill={HOOP.net}
-        opacity="0.42"
+        opacity="0.7"
       />
+      <g stroke={HOOP.net} strokeWidth="1.4" opacity="0.85" fill="none">
+        {NET_STRINGS.map((angle) => (
+          <line
+            key={angle}
+            x1={(rim.x + rimSize.rx * Math.cos(angle)).toFixed(1)}
+            y1={(rim.y + rimSize.ry * Math.sin(angle)).toFixed(1)}
+            x2={(netBottom.x + netSize.rx * Math.cos(angle)).toFixed(1)}
+            y2={(netBottom.y + netSize.ry * Math.sin(angle)).toFixed(1)}
+          />
+        ))}
+      </g>
       <ellipse
         cx={rim.x}
         cy={rim.y}

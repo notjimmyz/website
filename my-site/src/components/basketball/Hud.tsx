@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import type { PadKey } from "@/hooks/use-game-keys";
 import { DIFFICULTY_LABEL } from "@/lib/basketball/bot";
 import { TARGET_SCORE } from "@/lib/basketball/constants";
 import type { Difficulty, Team, ToastKind } from "@/lib/basketball/types";
@@ -56,67 +57,276 @@ function Side({ label, value, live }: { label: string; value: number; live: bool
   );
 }
 
-export function ControlsCard({ onOffense }: { onOffense: boolean }) {
+export type PressedKeys = {
+  w: boolean;
+  a: boolean;
+  s: boolean;
+  d: boolean;
+  shift: boolean;
+  space: boolean;
+  j: boolean;
+  enter: boolean;
+  p: boolean;
+};
+
+export const IDLE_KEYS: PressedKeys = {
+  w: false,
+  a: false,
+  s: false,
+  d: false,
+  shift: false,
+  space: false,
+  j: false,
+  enter: false,
+  p: false,
+};
+
+export function readPressed(held: Set<string>): PressedKeys {
+  return {
+    w: held.has("w") || held.has("arrowup"),
+    a: held.has("a") || held.has("arrowleft"),
+    s: held.has("s") || held.has("arrowdown"),
+    d: held.has("d") || held.has("arrowright"),
+    shift: held.has("shift"),
+    space: held.has(" "),
+    j: held.has("j"),
+    enter: held.has("enter"),
+    p: held.has("p"),
+  };
+}
+
+export function samePressed(a: PressedKeys, b: PressedKeys) {
   return (
-    <div className="pointer-events-none absolute bottom-7 left-6 text-background sm:bottom-9 sm:left-10">
+    a.w === b.w &&
+    a.a === b.a &&
+    a.s === b.s &&
+    a.d === b.d &&
+    a.shift === b.shift &&
+    a.space === b.space &&
+    a.j === b.j &&
+    a.enter === b.enter &&
+    a.p === b.p
+  );
+}
+
+export function ControlsCard({
+  onOffense,
+  pressed,
+  interactive,
+  onPress,
+  onRelease,
+}: {
+  onOffense: boolean;
+  pressed: PressedKeys;
+  interactive: boolean;
+  onPress: (key: PadKey) => void;
+  onRelease: (key: PadKey) => void;
+}) {
+  const shootHint = onOffense ? "Shoot" : "Block";
+  const actionHint = onOffense ? "Crossover" : "Steal";
+
+  return (
+    <div className="pointer-events-none absolute bottom-6 left-5 text-background sm:bottom-8 sm:left-9">
       <p className="text-[0.58rem] tracking-[0.24em] text-background/60 uppercase">
         Controls
       </p>
-      <div className="mt-3 flex flex-wrap gap-x-10 gap-y-4">
-        <Group
-          title="Always"
-          rows={[
-            ["Move", "W A S D"],
-            ["Sprint", "Shift"],
-          ]}
-        />
-        <Group
-          title="Offense"
-          dim={!onOffense}
-          rows={[
-            ["Shoot", "Space — release in the green"],
-            ["Crossover", "J"],
-          ]}
-        />
-        <Group
-          title="Defense"
-          dim={onOffense}
-          rows={[
-            ["Block", "Space"],
-            ["Steal", "J"],
-          ]}
-        />
+      <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-4">
+        <PadGroup label="Move">
+          <div className="grid w-[7.75rem] grid-cols-3 gap-1">
+            <span />
+            <Keycap
+              label="W"
+              hint="Move toward hoop"
+              pressed={pressed.w}
+              interactive={interactive}
+              onPress={() => onPress("w")}
+              onRelease={() => onRelease("w")}
+            />
+            <span />
+            <Keycap
+              label="A"
+              hint="Move left"
+              pressed={pressed.a}
+              interactive={interactive}
+              onPress={() => onPress("a")}
+              onRelease={() => onRelease("a")}
+            />
+            <Keycap
+              label="S"
+              hint="Move away from hoop"
+              pressed={pressed.s}
+              interactive={interactive}
+              onPress={() => onPress("s")}
+              onRelease={() => onRelease("s")}
+            />
+            <Keycap
+              label="D"
+              hint="Move right"
+              pressed={pressed.d}
+              interactive={interactive}
+              onPress={() => onPress("d")}
+              onRelease={() => onRelease("d")}
+            />
+          </div>
+        </PadGroup>
+
+        <PadGroup label="Sprint">
+          <Keycap
+            label="Shift"
+            hint="Sprint"
+            wide="shift"
+            pressed={pressed.shift}
+            interactive={interactive}
+            onPress={() => onPress("shift")}
+            onRelease={() => onRelease("shift")}
+          />
+        </PadGroup>
+
+        <PadGroup
+          label={shootHint}
+          detail={onOffense ? "Hold, release in green" : undefined}
+        >
+          <Keycap
+            label="Space"
+            hint={shootHint}
+            wide="space"
+            pressed={pressed.space}
+            interactive={interactive}
+            onPress={() => onPress(" ")}
+            onRelease={() => onRelease(" ")}
+          />
+        </PadGroup>
+
+        <PadGroup label={actionHint}>
+          <Keycap
+            label="J"
+            hint={actionHint}
+            pressed={pressed.j}
+            interactive={interactive}
+            onPress={() => onPress("j")}
+            onRelease={() => onRelease("j")}
+          />
+        </PadGroup>
       </div>
-      <p className="mt-4 text-[0.6rem] tracking-[0.18em] text-background/50 uppercase">
-        Enter check ball · P pause · Esc leave the court
-      </p>
+
+      <div className="mt-4 flex flex-wrap items-end gap-x-5 gap-y-2">
+        <PadGroup label="Check ball" compact>
+          <Keycap
+            label="Enter"
+            hint="Check ball"
+            wide="enter"
+            pressed={pressed.enter}
+            interactive={interactive}
+            onPress={() => onPress("enter")}
+            onRelease={() => onRelease("enter")}
+          />
+        </PadGroup>
+        <PadGroup label="Pause" compact>
+          <Keycap
+            label="P"
+            hint="Pause"
+            pressed={pressed.p}
+            interactive={interactive}
+            onPress={() => onPress("p")}
+            onRelease={() => onRelease("p")}
+          />
+        </PadGroup>
+        <p className="pb-1.5 text-[0.58rem] tracking-[0.18em] text-background/50 uppercase">
+          Esc leave the court
+        </p>
+      </div>
     </div>
   );
 }
 
-function Group({
-  title,
-  rows,
-  dim = false,
+function PadGroup({
+  label,
+  detail,
+  compact = false,
+  children,
 }: {
-  title: string;
-  rows: Array<[string, string]>;
-  dim?: boolean;
+  label: string;
+  detail?: string;
+  compact?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <div className={cn("transition-opacity duration-300", dim ? "opacity-40" : "opacity-100")}>
-      <p className="text-[0.56rem] tracking-[0.2em] text-background/55 uppercase">{title}</p>
-      <dl className="mt-1.5 space-y-1">
-        {rows.map(([key, value]) => (
-          <div key={key} className="flex items-baseline gap-2.5">
-            <dt className="text-[0.68rem] tracking-[0.12em] text-background/70 uppercase">
-              {key}
-            </dt>
-            <dd className="text-[0.78rem] text-background">{value}</dd>
-          </div>
-        ))}
-      </dl>
+    <div>
+      {children}
+      <p
+        className={cn(
+          "tracking-[0.18em] text-background/55 uppercase",
+          compact ? "mt-1 text-[0.5rem]" : "mt-1.5 text-[0.56rem]",
+        )}
+      >
+        {label}
+      </p>
+      {detail ? (
+        <p className="mt-0.5 text-[0.5rem] tracking-[0.14em] text-background/40 uppercase">
+          {detail}
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+function Keycap({
+  label,
+  hint,
+  pressed,
+  interactive,
+  wide,
+  onPress,
+  onRelease,
+}: {
+  label: string;
+  hint: string;
+  pressed: boolean;
+  interactive: boolean;
+  wide?: "shift" | "space" | "enter";
+  onPress: () => void;
+  onRelease: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <button
+      type="button"
+      data-game-pad=""
+      tabIndex={-1}
+      disabled={!interactive}
+      aria-pressed={pressed}
+      aria-label={hint}
+      onPointerDown={(event) => {
+        if (!interactive || event.button !== 0) return;
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        onPress();
+      }}
+      onPointerUp={(event) => {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      }}
+      onPointerCancel={(event) => {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      }}
+      onLostPointerCapture={onRelease}
+      className={cn(
+        "pointer-events-auto cursor-pointer touch-manipulation select-none border text-[0.68rem] tracking-[0.14em] uppercase",
+        "min-h-11 transition-[transform,background-color,border-color,color,box-shadow] duration-75 ease-out disabled:pointer-events-none disabled:cursor-default",
+        wide === "space" ? "min-w-[7.5rem] px-4" : wide === "shift" || wide === "enter" ? "min-w-[4.6rem] px-3" : "min-w-11 px-1.5",
+        pressed
+          ? "border-background bg-background text-foreground"
+          : "border-background/70 bg-background/12 text-background hover:border-background hover:bg-background/22",
+        pressed && !reduceMotion ? "translate-y-[2px]" : null,
+        !pressed && !reduceMotion ? "shadow-[0_2px_0_0_rgba(244,239,228,0.45)]" : "shadow-none",
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
