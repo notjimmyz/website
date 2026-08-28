@@ -7,12 +7,14 @@ import {
   eraAt,
   HIGH_STREET_CHAPTER,
   INITIAL_PROGRESS,
+  TENNIS_CHAPTER,
   type NestedChapter,
 } from "@/lib/timeline";
 import { useTimelineProgress } from "@/hooks/use-timeline-progress";
 import { BasketballOverlay } from "@/components/scene/BasketballOverlay";
 import { EraCaption } from "@/components/scene/EraCaption";
 import { HighStreetOverlay } from "@/components/scene/HighStreetOverlay";
+import { TennisOverlay } from "@/components/scene/TennisOverlay";
 import { SceneStage } from "@/components/scene/SceneStage";
 import { TimelineScrubber } from "@/components/timeline/TimelineScrubber";
 
@@ -25,7 +27,9 @@ export function TimelineExperience() {
       ? HIGH_STREET_CHAPTER
       : nestedId === "basketball"
         ? BASKETBALL_CHAPTER
-        : null;
+        : nestedId === "tennis"
+          ? TENNIS_CHAPTER
+          : null;
 
   const openHighStreet = useCallback(() => {
     setNestedId("high-street");
@@ -33,6 +37,10 @@ export function TimelineExperience() {
 
   const openBasketball = useCallback(() => {
     setNestedId("basketball");
+  }, []);
+
+  const openTennis = useCallback(() => {
+    setNestedId("tennis");
   }, []);
 
   const backToSixthForm = useCallback(() => {
@@ -61,9 +69,11 @@ export function TimelineExperience() {
           progress={progress}
           onOpenHighStreet={openHighStreet}
           onOpenBasketball={openBasketball}
+          onOpenTennis={openTennis}
         />
         <HighStreetOverlay open={nestedId === "high-street"} />
         <BasketballOverlay open={nestedId === "basketball"} />
+        <TennisOverlay open={nestedId === "tennis"} />
         <EraCaption
           progress={progress}
           nested={nested}

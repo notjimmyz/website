@@ -23,12 +23,14 @@ type SceneStageProps = {
   progress: MotionValue<number>;
   onOpenHighStreet?: () => void;
   onOpenBasketball?: () => void;
+  onOpenTennis?: () => void;
 };
 
 export function SceneStage({
   progress,
   onOpenHighStreet,
   onOpenBasketball,
+  onOpenTennis,
 }: SceneStageProps) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -46,6 +48,7 @@ export function SceneStage({
               progress={progress}
               onOpenHighStreet={era.id === "sixthform" ? onOpenHighStreet : undefined}
               onOpenBasketball={era.id === "sixthform" ? onOpenBasketball : undefined}
+              onOpenTennis={era.id === "sixthform" ? onOpenTennis : undefined}
             />
           </EraLayer>
         );

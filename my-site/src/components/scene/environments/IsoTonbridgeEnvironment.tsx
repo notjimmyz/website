@@ -5,7 +5,7 @@ import { useState, type KeyboardEvent } from "react";
 import { eraAt, eraDistance, eraVisibility } from "@/lib/timeline";
 import type { EnvironmentProps } from "./types";
 import { iso, isoPoints } from "./iso/project";
-import { BASKETBALL_HOTSPOT, TonbridgeSchool, TonbridgeSchoolForecourt } from "./IsoTonbridgeCampus";
+import { BASKETBALL_HOTSPOT, TENNIS_HOTSPOT, TonbridgeSchool, TonbridgeSchoolForecourt } from "./IsoTonbridgeCampus";
 import {
   IsoBox,
   IsoCar,
@@ -61,6 +61,7 @@ export function IsoTonbridgeEnvironment({
   progress,
   onOpenHighStreet,
   onOpenBasketball,
+  onOpenTennis,
 }: EnvironmentProps) {
   const reduceMotion = useReducedMotion();
   const drift = useTransform(progress, (value) =>
@@ -124,6 +125,16 @@ export function IsoTonbridgeEnvironment({
           accent="#7EB8D4"
           active={hotspotOn}
           onOpen={onOpenBasketball}
+        />
+        <IsoHotspot
+          x={TENNIS_HOTSPOT.x}
+          y={TENNIS_HOTSPOT.y}
+          z={4.35}
+          label="Tennis"
+          ariaLabel="Explore Tennis"
+          accent="#6FCF8A"
+          active={hotspotOn}
+          onOpen={onOpenTennis}
         />
       </motion.g>
     </svg>

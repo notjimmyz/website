@@ -4,4 +4,5 @@ export type EnvironmentProps = {
   progress: MotionValue<number>;
   onOpenHighStreet?: () => void;
   onOpenBasketball?: () => void;
+  onOpenTennis?: () => void;
 };

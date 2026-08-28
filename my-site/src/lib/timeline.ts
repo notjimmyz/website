@@ -53,7 +53,17 @@ export const BASKETBALL_CHAPTER = {
   region: "Kent",
 } as const;
 
-export type NestedChapter = typeof HIGH_STREET_CHAPTER | typeof BASKETBALL_CHAPTER;
+export const TENNIS_CHAPTER = {
+  id: "tennis",
+  label: "Tennis",
+  place: "Tonbridge",
+  region: "Kent",
+} as const;
+
+export type NestedChapter =
+  | typeof HIGH_STREET_CHAPTER
+  | typeof BASKETBALL_CHAPTER
+  | typeof TENNIS_CHAPTER;
 
 export const TIMELINE_START = ERAS[0].at;
 export const TIMELINE_END = ERAS[ERAS.length - 1].at;

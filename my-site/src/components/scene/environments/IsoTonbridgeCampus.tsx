@@ -80,6 +80,11 @@ export const BASKETBALL_HOTSPOT = {
   y: BASKETBALL_Y + BASKETBALL_D / 2,
 } as const;
 
+export const TENNIS_HOTSPOT = {
+  x: TENNIS_X + TENNIS_W / 2,
+  y: TENNIS_Y + TENNIS_D / 2,
+} as const;
+
 export function TonbridgeSchool({ reduceMotion }: { reduceMotion: boolean }) {
   return (
     <g data-landmark="tonbridge-school">
