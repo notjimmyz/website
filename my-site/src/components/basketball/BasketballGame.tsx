@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { useGameKeys, type PadKey } from "@/hooks/use-game-keys";
 import { useGameLoop } from "@/hooks/use-game-loop";
 import { decideBot } from "@/lib/basketball/bot";
-import { project, screenPan, SCREEN_H, SCREEN_W, SIN_PITCH } from "@/lib/basketball/camera";
+import { project, screenPan, SCREEN_H, SCREEN_W, SIN_PITCH, VERTICAL } from "@/lib/basketball/camera";
 import { PLAYER_HEIGHT, SHOT_CLOCK } from "@/lib/basketball/constants";
 import { distanceToHoop } from "@/lib/basketball/court";
 import { KIT, METER } from "@/lib/basketball/palette";
@@ -49,6 +49,8 @@ type ActorNodes = {
   shadow: SVGEllipseElement;
   poses: Record<Pose, SVGGElement>;
   lastPose: Pose;
+  birds: SVGGElement;
+  bird: [SVGPathElement, SVGPathElement, SVGPathElement];
 };
 
 type SceneNodes = {
@@ -77,8 +79,33 @@ function collectNodes(svg: SVGSVGElement): SceneNodes | null {
     const run = pick<SVGGElement>(`${name}-pose-run`);
     const shoot = pick<SVGGElement>(`${name}-pose-shoot`);
     const reach = pick<SVGGElement>(`${name}-pose-reach`);
-    if (!root || !body || !shadow || !run || !shoot || !reach) return null;
-    return { root, body, shadow, poses: { run, shoot, reach }, lastPose: "run" };
+    const birds = pick<SVGGElement>(`${name}-birds`);
+    const bird0 = pick<SVGPathElement>(`${name}-bird-0`);
+    const bird1 = pick<SVGPathElement>(`${name}-bird-1`);
+    const bird2 = pick<SVGPathElement>(`${name}-bird-2`);
+    if (
+      !root ||
+      !body ||
+      !shadow ||
+      !run ||
+      !shoot ||
+      !reach ||
+      !birds ||
+      !bird0 ||
+      !bird1 ||
+      !bird2
+    ) {
+      return null;
+    }
+    return {
+      root,
+      body,
+      shadow,
+      poses: { run, shoot, reach },
+      lastPose: "run",
+      birds,
+      bird: [bird0, bird1, bird2],
+    };
   };
 
   const scene = pick<SVGGElement>("scene");
@@ -118,7 +145,12 @@ function collectNodes(svg: SVGSVGElement): SceneNodes | null {
   };
 }
 
-function paintActor(nodes: ActorNodes, actor: Actor) {
+function paintActor(
+  nodes: ActorNodes,
+  actor: Actor,
+  t: number,
+  reduceMotion: boolean,
+) {
   const p = project(actor.x, actor.y, actor.z);
   nodes.body.setAttribute(
     "transform",
@@ -138,6 +170,17 @@ function paintActor(nodes: ActorNodes, actor: Actor) {
       nodes.poses[pose].setAttribute("display", pose === actor.pose ? "inline" : "none");
     }
     nodes.lastPose = actor.pose;
+  }
+
+  const stunned = t < actor.stunUntil;
+  nodes.birds.setAttribute("display", stunned ? "inline" : "none");
+  if (stunned) {
+    for (let i = 0; i < 3; i += 1) {
+      const angle = reduceMotion ? -0.7 + i * 0.7 : t * 3.6 + (i * Math.PI * 2) / 3;
+      const x = Math.cos(angle) * 0.58;
+      const y = Math.sin(angle) * 0.2 * VERTICAL;
+      nodes.bird[i].setAttribute("transform", `translate(${x.toFixed(3)} ${y.toFixed(3)})`);
+    }
   }
 }
 
@@ -204,8 +247,8 @@ function paintScene(nodes: SceneNodes, state: GameState, reduceMotion: boolean) 
   const pan = reduceMotion ? 0 : screenPan(state.ball.x);
   nodes.scene.setAttribute("transform", `translate(${pan.toFixed(1)} 0)`);
 
-  paintActor(nodes.user, state.user);
-  paintActor(nodes.bot, state.bot);
+  paintActor(nodes.user, state.user, state.t, reduceMotion);
+  paintActor(nodes.bot, state.bot, state.t, reduceMotion);
   paintBall(nodes.ball, state.ball);
   paintMeter(nodes.meter, state);
 

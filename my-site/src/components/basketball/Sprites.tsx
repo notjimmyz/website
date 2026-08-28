@@ -1,6 +1,6 @@
 import { VERTICAL } from "@/lib/basketball/camera";
 import { BALL_RADIUS } from "@/lib/basketball/constants";
-import { BALL, KIT, METER, SHADOW } from "@/lib/basketball/palette";
+import { BALL, HOOP, KIT, METER, SHADOW } from "@/lib/basketball/palette";
 
 type Kit = typeof KIT.user;
 
@@ -39,7 +39,26 @@ export function ActorSprite({ name, kit }: { name: string; kit: Kit }) {
         <g data-node={`${name}-pose-reach`} display="none">
           <ReachPose kit={kit} />
         </g>
+        <StunBirds name={name} />
       </g>
+    </g>
+  );
+}
+
+function StunBirds({ name }: { name: string }) {
+  return (
+    <g data-node={`${name}-birds`} display="none" transform={`translate(0 ${z(6.7)})`}>
+      {[0, 1, 2].map((i) => (
+        <path
+          key={i}
+          data-node={`${name}-bird-${i}`}
+          d={`M -0.3 0 Q -0.15 ${-0.18 * VERTICAL} 0 0 Q 0.15 ${-0.18 * VERTICAL} 0.3 0`}
+          fill="none"
+          stroke={HOOP.pole}
+          strokeWidth="0.1"
+          strokeLinecap="round"
+        />
+      ))}
     </g>
   );
 }

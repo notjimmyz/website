@@ -7,6 +7,7 @@ import {
   BALL_RESTITUTION,
   BLOCK_BASE,
   BLOCK_RANGE,
+  BLOCK_STUN,
   BODY_SEPARATION,
   CHECK_DEFENDER_GAP,
   CHECK_Y,
@@ -92,6 +93,7 @@ function createActor(id: Team): Actor {
     crossoverReadyAt: 0,
     stumbleUntil: 0,
     stealReadyAt: 0,
+    stunUntil: 0,
     meter: createMeter(),
     perceivedX: 0,
     perceivedY: CHECK_Y,
@@ -192,6 +194,7 @@ function setCheck(state: GameState, offense: Team) {
     actor.vz = 0;
     actor.airborneFor = "none";
     actor.stumbleUntil = 0;
+    actor.stunUntil = 0;
     actor.crossoverUntil = 0;
     actor.pose = "run";
     actor.perceivedX = state.user.x;
@@ -240,7 +243,8 @@ function attachBall(state: GameState) {
 }
 
 function moveActor(state: GameState, actor: Actor, input: Input, dt: number) {
-  const stumbled = state.t < actor.stumbleUntil;
+  const stunned = state.t < actor.stunUntil;
+  const stumbled = !stunned && state.t < actor.stumbleUntil;
   const airborne = actor.z > 0.01;
 
   let top =
@@ -250,8 +254,8 @@ function moveActor(state: GameState, actor: Actor, input: Input, dt: number) {
   if (stumbled) top *= STUMBLE_FACTOR;
   if (actor.meter.active) top *= 0.35;
 
-  let ix = input.moveX;
-  let iy = input.moveY;
+  let ix = stunned ? 0 : input.moveX;
+  let iy = stunned ? 0 : input.moveY;
   const magnitude = Math.hypot(ix, iy);
   if (magnitude > 1) {
     ix /= magnitude;
@@ -268,6 +272,11 @@ function moveActor(state: GameState, actor: Actor, input: Input, dt: number) {
     const scale = Math.min(1, rate / delta);
     actor.vx += dvx * scale;
     actor.vy += dvy * scale;
+  }
+
+  if (stunned) {
+    actor.vx = 0;
+    actor.vy = 0;
   }
 
   actor.x = clampToCourtX(actor.x + actor.vx * dt);
@@ -377,20 +386,32 @@ function releaseShot(state: GameState, shooter: Actor, defender: Actor) {
     random(state) < BLOCK_BASE * (1 - (reach / BLOCK_RANGE) ** 2) * blockSkill;
 
   if (blocked) {
-    const awayX = shooter.x - defender.x;
-    const awayY = shooter.y - defender.y;
-    const away = Math.max(0.001, Math.hypot(awayX, awayY));
+    const fromDefX = shooter.x - defender.x;
+    const fromDefY = shooter.y - defender.y;
+    const fromDef = Math.max(0.001, Math.hypot(fromDefX, fromDefY));
+    const fromHoopX = shooter.x - HOOP_X;
+    const fromHoopY = shooter.y - HOOP_Y;
+    const fromHoop = Math.max(0.001, Math.hypot(fromHoopX, fromHoopY));
+    let nx = fromHoopX / fromHoop * 0.7 + fromDefX / fromDef * 0.3;
+    let ny = fromHoopY / fromHoop * 0.7 + fromDefY / fromDef * 0.3;
+    const n = Math.max(0.001, Math.hypot(nx, ny));
+    nx /= n;
+    ny /= n;
 
+    const kick = 15.5 + random(state) * 3.5;
     ball.outcome = "blocked";
     ball.mode = "loose";
-    ball.x = fromX;
-    ball.y = fromY;
+    ball.x = fromX + nx * 1.2;
+    ball.y = fromY + ny * 1.2;
     ball.z = fromZ;
-    ball.vx = (awayX / away) * 7 + (random(state) - 0.5) * 3;
-    ball.vy = (awayY / away) * 7;
-    ball.vz = 2.4;
-    ball.grabReadyAt = state.t + 0.08;
+    ball.vx = nx * kick + (random(state) - 0.5) * 4;
+    ball.vy = ny * kick + (random(state) - 0.5) * 2.4;
+    ball.vz = 8.4;
+    ball.grabReadyAt = state.t + 0.1;
     ball.looseSince = state.t;
+    shooter.stunUntil = state.t + BLOCK_STUN;
+    shooter.vx = 0;
+    shooter.vy = 0;
     state.phase = "live";
     setToast(state, defender.id === "user" ? "Blocked!" : "Blocked by CPU", "block");
     return;
@@ -477,6 +498,8 @@ function attemptCrossover(state: GameState, handler: Actor, defender: Actor) {
 }
 
 function applyActions(state: GameState, actor: Actor, input: Input, dt: number) {
+  if (state.t < actor.stunUntil) return;
+
   const ball = state.ball;
   const opponent = actorOf(state, other(actor.id));
   const hasBall = ball.mode === "held" && ball.holder === actor.id;
@@ -598,6 +621,7 @@ function tryGrab(state: GameState) {
   let best = Infinity;
 
   for (const actor of [state.user, state.bot]) {
+    if (state.t < actor.stunUntil) continue;
     const jumping = actor.airborneFor === "block";
     const range = baseRange + (jumping ? 1.4 : 0);
     const horiz = Math.hypot(actor.x - ball.x, actor.y - ball.y);

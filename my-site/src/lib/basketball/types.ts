@@ -36,6 +36,7 @@ export type Actor = {
   crossoverReadyAt: number;
   stumbleUntil: number;
   stealReadyAt: number;
+  stunUntil: number;
   meter: Meter;
   perceivedX: number;
   perceivedY: number;
