@@ -77,3 +77,6 @@ export const METER = {
 };
 
 export const SHADOW = "#2C3E52";
+
+/** Pulsed on the three-point line until the offense takes it back. */
+export const CLEAR = "#D46B66";

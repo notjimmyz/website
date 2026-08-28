@@ -63,6 +63,8 @@ export type Ball = {
   looseSince: number;
   /** Live until this time, a jumping defender can still swat a released shot. */
   blockUntil: number;
+  /** Whether the shooter had taken it back before this shot. */
+  shotCleared: boolean;
 };
 
 export type ToastKind = "green" | "score" | "steal" | "block" | "info";
@@ -88,6 +90,8 @@ export type GameState = {
   toast: Toast | null;
   winner: Team | null;
   seed: number;
+  /** False after a stop until the ball is taken behind the three. */
+  cleared: boolean;
 };
 
 export type Input = {

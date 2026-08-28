@@ -24,7 +24,7 @@ import {
   SCREEN_W,
 } from "@/lib/basketball/camera";
 import { arcPoints, threePointPoints } from "@/lib/basketball/court";
-import { CAGE, COURT, HOOP, SHADOW, SURROUNDS } from "@/lib/basketball/palette";
+import { CAGE, CLEAR, COURT, HOOP, SHADOW, SURROUNDS } from "@/lib/basketball/palette";
 
 const APRON_X = COURT_HALF_WIDTH + 2.6;
 const APRON_BACK = -3.4;
@@ -327,7 +327,8 @@ function Markings() {
   const halfCircle = arcPoints(HOOP_X, COURT_DEPTH, 6, Math.PI, Math.PI * 2, 28);
 
   return (
-    <g
+    <>
+      <g
       data-layer="markings"
       fill="none"
       stroke={LINE}
@@ -381,6 +382,18 @@ function Markings() {
         <path d={projectPath(arcPoints(HOOP_X, FT_LINE_Y, 2.1, 0, Math.PI * 2, 28))} />
       </g>
     </g>
+    <path
+      data-node="clear-arc"
+      d={projectPath(threePointPoints())}
+      fill="none"
+      stroke={CLEAR}
+      strokeWidth="5.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0"
+      display="none"
+    />
+  </>
   );
 }
 

@@ -65,6 +65,7 @@ type SceneNodes = {
     fill: SVGRectElement;
     tick: SVGLineElement;
   };
+  clearArc: SVGPathElement;
   userIsNear: boolean | null;
 };
 
@@ -118,6 +119,7 @@ function collectNodes(svg: SVGSVGElement): SceneNodes | null {
   const meterWindow = pick<SVGRectElement>("meter-window");
   const meterFill = pick<SVGRectElement>("meter-fill");
   const meterTick = pick<SVGLineElement>("meter-tick");
+  const clearArc = pick<SVGPathElement>("clear-arc");
 
   if (
     !scene ||
@@ -129,7 +131,8 @@ function collectNodes(svg: SVGSVGElement): SceneNodes | null {
     !meterRoot ||
     !meterWindow ||
     !meterFill ||
-    !meterTick
+    !meterTick ||
+    !clearArc
   ) {
     return null;
   }
@@ -141,6 +144,7 @@ function collectNodes(svg: SVGSVGElement): SceneNodes | null {
     bot,
     ball: { body: ballBody, shadow: ballShadow },
     meter: { root: meterRoot, window: meterWindow, fill: meterFill, tick: meterTick },
+    clearArc,
     userIsNear: null,
   };
 }
@@ -200,6 +204,16 @@ function paintBall(nodes: SceneNodes["ball"], ball: Ball) {
   nodes.shadow.setAttribute("opacity", (0.2 * (1 - Math.min(1, ball.z / 13))).toFixed(2));
 }
 
+function paintClearArc(node: SVGPathElement, state: GameState, reduceMotion: boolean) {
+  const showing =
+    !state.cleared && (state.phase === "live" || state.phase === "shot");
+  node.setAttribute("display", showing ? "inline" : "none");
+  if (!showing) return;
+
+  const pulse = reduceMotion ? 0.82 : 0.42 + 0.5 * (0.5 + 0.5 * Math.sin(state.t * 5.2));
+  node.setAttribute("opacity", pulse.toFixed(2));
+}
+
 function paintMeter(nodes: SceneNodes["meter"], state: GameState) {
   const meter = state.user.meter;
   const showing = meter.active || state.t < meter.flashUntil;
@@ -251,6 +265,7 @@ function paintScene(nodes: SceneNodes, state: GameState, reduceMotion: boolean) 
   paintActor(nodes.bot, state.bot, state.t, reduceMotion);
   paintBall(nodes.ball, state.ball);
   paintMeter(nodes.meter, state);
+  paintClearArc(nodes.clearArc, state, reduceMotion);
 
   // Painter's order: whoever is further from the camera is drawn first.
   const userIsNear = state.user.y > state.bot.y;
@@ -270,6 +285,7 @@ type Hud = {
   toast: string | null;
   toastKind: ToastKind;
   winner: Team | null;
+  cleared: boolean;
 };
 
 function readHud(state: GameState): Hud {
@@ -282,6 +298,7 @@ function readHud(state: GameState): Hud {
     toast: state.toast?.text ?? null,
     toastKind: state.toast?.kind ?? "info",
     winner: state.winner,
+    cleared: state.cleared,
   };
 }
 
@@ -294,7 +311,8 @@ function sameHud(a: Hud, b: Hud) {
     a.shotClock === b.shotClock &&
     a.toast === b.toast &&
     a.toastKind === b.toastKind &&
-    a.winner === b.winner
+    a.winner === b.winner &&
+    a.cleared === b.cleared
   );
 }
 
@@ -418,7 +436,9 @@ export function BasketballGame() {
       ? hud.possession === "user"
         ? "Your ball — Enter to check it up"
         : "CPU ball"
-      : null;
+      : !hud.cleared && hud.possession === "user" && (hud.phase === "live" || hud.phase === "shot")
+        ? "Take it back behind the arc"
+        : null;
 
   return (
     <div
@@ -474,8 +494,8 @@ export function BasketballGame() {
             title="One on one"
             detail={
               coarsePointer
-                ? "Built for a keyboard, so this one plays best on a laptop. First to seven, twos from behind the arc, and make it to keep it."
-                : "First to seven. Twos from behind the arc, and make it to keep it. Hold Space, then release inside the green to shoot."
+                ? "Built for a keyboard, so this one plays best on a laptop. First to seven, twos from behind the arc, and make it to keep it. After a stop, take it back."
+                : "First to seven. Twos from behind the arc, and make it to keep it. After a steal or the other player's rebound, take it back behind the three or the bucket does not count."
             }
             primaryLabel="Check the ball"
             onPrimary={() => beginMatch(difficulty)}

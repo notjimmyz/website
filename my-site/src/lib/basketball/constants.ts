@@ -74,7 +74,8 @@ export const GRAB_RANGE = 3.4;
 
 export const SHOT_CLOCK = 12;
 export const TARGET_SCORE = 7;
-export const CHECK_Y = 26;
+/** Check at the top of the floor, just outside the three. */
+export const CHECK_Y = HOOP_Y + ARC_RADIUS + 1.15;
 export const CHECK_DEFENDER_GAP = 4.2;
 
 export const MADE_PAUSE = 1.15;

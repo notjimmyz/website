@@ -49,7 +49,7 @@ import {
   TURNOVER_PAUSE,
   WALK_SPEED,
 } from "./constants";
-import { clampToCourtX, clampToCourtY, distanceToHoop, shotValue } from "./court";
+import { clampToCourtX, clampToCourtY, distanceToHoop, isBehindArc, shotValue } from "./court";
 import { random } from "./rng";
 import { contestOn, greenWindow, missTarget, resolveShot } from "./shot";
 import type {
@@ -131,10 +131,12 @@ export function createGame(difficulty: Difficulty, seed = 0x2f6a1b): GameState {
       grabReadyAt: 0,
       looseSince: 0,
       blockUntil: 0,
+      shotCleared: true,
     },
     toast: null,
     winner: null,
     seed,
+    cleared: true,
   };
 
   applyDifficulty(state, difficulty);
@@ -217,6 +219,7 @@ function setCheck(state: GameState, offense: Team) {
 
   state.possession = offense;
   state.shotClock = SHOT_CLOCK;
+  state.cleared = true;
   state.phase = "check";
   state.phaseUntil = state.t + 0.35;
   attachBall(state);
@@ -375,6 +378,7 @@ function releaseShot(state: GameState, shooter: Actor, defender: Actor) {
   ball.holder = null;
   ball.shooter = shooter.id;
   ball.value = shotValue(shooter.x, shooter.y);
+  ball.shotCleared = state.cleared;
 
   const fromX = ball.x;
   const fromY = ball.y;
@@ -489,6 +493,7 @@ function attemptSteal(state: GameState, thief: Actor, holder: Actor) {
     ball.outcome = null;
     state.possession = thief.id;
     state.shotClock = SHOT_CLOCK;
+    state.cleared = isBehindArc(thief.x, thief.y);
     thief.stealReadyAt = state.t + 0.4;
     setToast(state, thief.id === "user" ? "Stolen!" : "CPU steal", "steal");
     return;
@@ -584,10 +589,6 @@ function updatePose(state: GameState, actor: Actor) {
 function scoreBasket(state: GameState) {
   const ball = state.ball;
   const team = ball.shooter ?? state.possession;
-  const value = ball.value;
-
-  if (team === "user") state.scoreUser += value;
-  else state.scoreBot += value;
 
   ball.mode = "loose";
   ball.x = HOOP_X;
@@ -598,6 +599,18 @@ function scoreBasket(state: GameState) {
   ball.vz = -7;
   ball.grabReadyAt = Number.POSITIVE_INFINITY;
   ball.looseSince = state.t;
+
+  if (!ball.shotCleared) {
+    state.possession = other(team);
+    state.phase = "turnover";
+    state.phaseUntil = state.t + TURNOVER_PAUSE;
+    setToast(state, "No take-back", "info");
+    return;
+  }
+
+  const value = ball.value;
+  if (team === "user") state.scoreUser += value;
+  else state.scoreBot += value;
 
   const total = team === "user" ? state.scoreUser : state.scoreBot;
   setToast(state, `+${value}`, "score");
@@ -662,8 +675,10 @@ function tryGrab(state: GameState) {
   if (!winner) return;
 
   const changed = state.possession !== winner.id;
+  const ownMiss = winner.id === ball.shooter && ball.outcome !== "blocked";
   state.possession = winner.id;
   state.shotClock = SHOT_CLOCK;
+  state.cleared = ownMiss ? ball.shotCleared : isBehindArc(winner.x, winner.y);
 
   ball.holder = winner.id;
   ball.mode = "held";
@@ -725,6 +740,14 @@ function updateBall(state: GameState, dt: number) {
   tryGrab(state);
 }
 
+function updateTakeBack(state: GameState) {
+  if (state.cleared) return;
+  const ball = state.ball;
+  if (ball.mode !== "held" || !ball.holder) return;
+  const holder = actorOf(state, ball.holder);
+  if (isBehindArc(holder.x, holder.y)) state.cleared = true;
+}
+
 function updateShotClock(state: GameState, dt: number) {
   if (state.phase !== "live" || state.ball.mode !== "held") return;
 
@@ -779,5 +802,6 @@ export function step(state: GameState, user: Input, bot: Input, dt: number) {
   updatePose(state, state.bot);
 
   updateBall(state, dt);
+  updateTakeBack(state);
   updateShotClock(state, dt);
 }

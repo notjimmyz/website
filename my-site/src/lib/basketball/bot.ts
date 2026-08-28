@@ -173,6 +173,13 @@ function driveOrShoot(state: GameState, input: Input, profile: BotProfile, dt: n
     return;
   }
 
+  if (!state.cleared) {
+    const takeY = Math.min(COURT_DEPTH - 1.6, HOOP_Y + ARC_RADIUS + 0.8);
+    steer(input, me.x, me.y, clampX(me.x * 0.35), takeY);
+    input.sprint = true;
+    return;
+  }
+
   const forced = state.shotClock <= profile.urgency;
   const open = guarded > profile.openness;
   const inRange = distance < ARC_RADIUS + 3;
