@@ -58,6 +58,8 @@ export const STEAL_SELF_STUMBLE = 0.12;
 export const BLOCK_RANGE = 5.2;
 export const BLOCK_BASE = 0.78;
 export const BLOCK_STUN = 1.05;
+/** Seconds after release where a late jump can still swat the ball. */
+export const BLOCK_CHASE = 0.34;
 
 export const SHOT_WINDUP = 0.62;
 export const METER_CENTER = 0.84;

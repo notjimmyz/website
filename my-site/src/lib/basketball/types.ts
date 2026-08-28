@@ -61,6 +61,8 @@ export type Ball = {
   landsAt: number;
   grabReadyAt: number;
   looseSince: number;
+  /** Live until this time, a jumping defender can still swat a released shot. */
+  blockUntil: number;
 };
 
 export type ToastKind = "green" | "score" | "steal" | "block" | "info";

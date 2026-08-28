@@ -224,10 +224,16 @@ function defend(state: GameState, input: Input, profile: BotProfile, dt: number)
   input.sprint = distance > 2.4;
 
   const reach = Math.hypot(me.x - foe.x, me.y - foe.y);
+  const ball = state.ball;
+  const chase =
+    ball.mode === "flight" &&
+    ball.shooter === "user" &&
+    state.t <= ball.blockUntil &&
+    Math.hypot(me.x - ball.x, me.y - ball.y) < BLOCK_RANGE;
 
-  if (foe.meter.active && reach < BLOCK_RANGE && me.z <= 0.01) {
-    const ready = foe.meter.value > 0.45;
-    if (ready && random(state) < profile.blockRate * dt) {
+  if (me.z <= 0.01) {
+    const contest = foe.meter.active && reach < BLOCK_RANGE && foe.meter.value > 0.45;
+    if ((contest || chase) && random(state) < profile.blockRate * dt) {
       input.shootPressed = true;
       return;
     }

@@ -6,6 +6,7 @@ import {
   BALL_RADIUS,
   BALL_RESTITUTION,
   BLOCK_BASE,
+  BLOCK_CHASE,
   BLOCK_RANGE,
   BLOCK_STUN,
   BODY_SEPARATION,
@@ -129,6 +130,7 @@ export function createGame(difficulty: Difficulty, seed = 0x2f6a1b): GameState {
       landsAt: 0,
       grabReadyAt: 0,
       looseSince: 0,
+      blockUntil: 0,
     },
     toast: null,
     winner: null,
@@ -211,6 +213,7 @@ function setCheck(state: GameState, offense: Team) {
   ball.vy = 0;
   ball.vz = 0;
   ball.grabReadyAt = 0;
+  ball.blockUntil = 0;
 
   state.possession = offense;
   state.shotClock = SHOT_CLOCK;
@@ -386,39 +389,13 @@ function releaseShot(state: GameState, shooter: Actor, defender: Actor) {
     random(state) < BLOCK_BASE * (1 - (reach / BLOCK_RANGE) ** 2) * blockSkill;
 
   if (blocked) {
-    const fromDefX = shooter.x - defender.x;
-    const fromDefY = shooter.y - defender.y;
-    const fromDef = Math.max(0.001, Math.hypot(fromDefX, fromDefY));
-    const fromHoopX = shooter.x - HOOP_X;
-    const fromHoopY = shooter.y - HOOP_Y;
-    const fromHoop = Math.max(0.001, Math.hypot(fromHoopX, fromHoopY));
-    let nx = fromHoopX / fromHoop * 0.7 + fromDefX / fromDef * 0.3;
-    let ny = fromHoopY / fromHoop * 0.7 + fromDefY / fromDef * 0.3;
-    const n = Math.max(0.001, Math.hypot(nx, ny));
-    nx /= n;
-    ny /= n;
-
-    const kick = 15.5 + random(state) * 3.5;
-    ball.outcome = "blocked";
-    ball.mode = "loose";
-    ball.x = fromX + nx * 1.2;
-    ball.y = fromY + ny * 1.2;
-    ball.z = fromZ;
-    ball.vx = nx * kick + (random(state) - 0.5) * 4;
-    ball.vy = ny * kick + (random(state) - 0.5) * 2.4;
-    ball.vz = 8.4;
-    ball.grabReadyAt = state.t + 0.1;
-    ball.looseSince = state.t;
-    shooter.stunUntil = state.t + BLOCK_STUN;
-    shooter.vx = 0;
-    shooter.vy = 0;
-    state.phase = "live";
-    setToast(state, defender.id === "user" ? "Blocked!" : "Blocked by CPU", "block");
+    applyBlock(state, shooter, defender);
     return;
   }
 
   ball.outcome = resolution.made ? "make" : "miss";
   ball.mode = "flight";
+  ball.blockUntil = state.t + BLOCK_CHASE;
 
   const flight = 0.62 + distance * 0.028;
   let targetX = HOOP_X;
@@ -439,6 +416,53 @@ function releaseShot(state: GameState, shooter: Actor, defender: Actor) {
   state.phase = "shot";
 
   if (resolution.greened) setToast(state, "Green", "green");
+}
+
+function applyBlock(state: GameState, shooter: Actor, defender: Actor) {
+  const ball = state.ball;
+  const fromDefX = shooter.x - defender.x;
+  const fromDefY = shooter.y - defender.y;
+  const fromDef = Math.max(0.001, Math.hypot(fromDefX, fromDefY));
+  const fromHoopX = shooter.x - HOOP_X;
+  const fromHoopY = shooter.y - HOOP_Y;
+  const fromHoop = Math.max(0.001, Math.hypot(fromHoopX, fromHoopY));
+  let nx = (fromHoopX / fromHoop) * 0.7 + (fromDefX / fromDef) * 0.3;
+  let ny = (fromHoopY / fromHoop) * 0.7 + (fromDefY / fromDef) * 0.3;
+  const n = Math.max(0.001, Math.hypot(nx, ny));
+  nx /= n;
+  ny /= n;
+
+  const kick = 15.5 + random(state) * 3.5;
+  ball.outcome = "blocked";
+  ball.mode = "loose";
+  ball.blockUntil = 0;
+  ball.x += nx * 1.2;
+  ball.y += ny * 1.2;
+  ball.vx = nx * kick + (random(state) - 0.5) * 4;
+  ball.vy = ny * kick + (random(state) - 0.5) * 2.4;
+  ball.vz = 8.4;
+  ball.grabReadyAt = state.t + 0.1;
+  ball.looseSince = state.t;
+  shooter.stunUntil = state.t + BLOCK_STUN;
+  shooter.vx = 0;
+  shooter.vy = 0;
+  state.phase = "live";
+  setToast(state, defender.id === "user" ? "Blocked!" : "Blocked by CPU", "block");
+}
+
+function tryChaseBlock(state: GameState) {
+  const ball = state.ball;
+  if (ball.mode !== "flight" || state.t > ball.blockUntil || !ball.shooter) return;
+
+  const shooter = actorOf(state, ball.shooter);
+  const defender = actorOf(state, other(ball.shooter));
+  if (defender.airborneFor !== "block" || defender.z <= 0.12) return;
+
+  const reach = Math.hypot(defender.x - ball.x, defender.y - ball.y);
+  if (reach > BLOCK_RANGE) return;
+  if (ball.z > PLAYER_HEIGHT + defender.z + 1.4) return;
+
+  applyBlock(state, shooter, defender);
 }
 
 function attemptSteal(state: GameState, thief: Actor, holder: Actor) {
@@ -663,7 +687,8 @@ function updateBall(state: GameState, dt: number) {
   ball.z += ball.vz * dt;
 
   if (ball.mode === "flight") {
-    if (state.t >= ball.landsAt) {
+    tryChaseBlock(state);
+    if (ball.mode === "flight" && state.t >= ball.landsAt) {
       if (ball.outcome === "make") scoreBasket(state);
       else reboundOffRim(state);
     }
