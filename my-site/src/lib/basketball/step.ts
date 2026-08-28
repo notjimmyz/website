@@ -17,7 +17,6 @@ import {
   CROSSOVER_DURATION,
   CROSSOVER_REACH,
   FRICTION,
-  GRAB_HEIGHT,
   GRAB_RANGE,
   GRAVITY,
   HOOP_X,
@@ -26,6 +25,7 @@ import {
   MADE_PAUSE,
   METER_CENTER,
   METER_OVERFILL,
+  PLAYER_HEIGHT,
   RELEASE_HEIGHT,
   RIM_HEIGHT,
   SHOT_CLOCK,
@@ -226,7 +226,7 @@ function attachBall(state: GameState) {
     const lift = Math.min(1, holder.meter.value / holder.meter.center);
     ball.x = holder.x + holder.facing * 0.3;
     ball.y = holder.y - 0.2;
-    ball.z = holder.z + 3.5 + lift * (RELEASE_HEIGHT - 3.5);
+    ball.z = holder.z + 2.6 + lift * (RELEASE_HEIGHT - 2.6);
     return;
   }
 
@@ -370,10 +370,11 @@ function releaseShot(state: GameState, shooter: Actor, defender: Actor) {
 
   const reach = Math.hypot(shooter.x - defender.x, shooter.y - defender.y);
   const blockSkill = defender.id === "bot" ? PROFILES[state.difficulty].blockSkill : 1;
+  const jumping = defender.airborneFor === "block" && defender.z > 0.12;
   const blocked =
-    defender.z > 0.7 &&
+    jumping &&
     reach < BLOCK_RANGE &&
-    random(state) < BLOCK_BASE * (1 - reach / BLOCK_RANGE) * blockSkill;
+    random(state) < BLOCK_BASE * (1 - (reach / BLOCK_RANGE) ** 2) * blockSkill;
 
   if (blocked) {
     const awayX = shooter.x - defender.x;
@@ -385,10 +386,10 @@ function releaseShot(state: GameState, shooter: Actor, defender: Actor) {
     ball.x = fromX;
     ball.y = fromY;
     ball.z = fromZ;
-    ball.vx = (awayX / away) * 9 + (random(state) - 0.5) * 4;
-    ball.vy = (awayY / away) * 9;
-    ball.vz = 3.5;
-    ball.grabReadyAt = state.t + 0.22;
+    ball.vx = (awayX / away) * 7 + (random(state) - 0.5) * 3;
+    ball.vy = (awayY / away) * 7;
+    ball.vz = 2.4;
+    ball.grabReadyAt = state.t + 0.08;
     ball.looseSince = state.t;
     state.phase = "live";
     setToast(state, defender.id === "user" ? "Blocked!" : "Blocked by CPU", "block");
@@ -429,9 +430,9 @@ function attemptSteal(state: GameState, thief: Actor, holder: Actor) {
     return;
   }
 
-  const exposure = holder.meter.active ? 0.6 : 1;
+  const exposure = holder.meter.active ? 0.9 : 1;
   const shaken = state.t < holder.stumbleUntil ? 1.7 : 1;
-  const chance = STEAL_BASE * (1 - reach / STEAL_RANGE) * shaken * exposure;
+  const chance = STEAL_BASE * (1 - (reach / STEAL_RANGE) ** 2) * shaken * exposure;
 
   if (random(state) < chance) {
     const ball = state.ball;
@@ -588,18 +589,29 @@ function reboundOffRim(state: GameState) {
 
 function tryGrab(state: GameState) {
   const ball = state.ball;
-  if (state.t < ball.grabReadyAt || ball.z > GRAB_HEIGHT) return;
+  if (state.t < ball.grabReadyAt) return;
 
   const patience = Math.max(0, state.t - ball.looseSince - 3);
-  const range = GRAB_RANGE + patience * 1.6;
+  const baseRange = GRAB_RANGE + patience * 1.6;
 
-  const candidates = [state.user, state.bot].sort(
-    (a, b) =>
-      Math.hypot(a.x - ball.x, a.y - ball.y) - Math.hypot(b.x - ball.x, b.y - ball.y),
-  );
+  let winner: Actor | null = null;
+  let best = Infinity;
 
-  const winner = candidates[0];
-  if (Math.hypot(winner.x - ball.x, winner.y - ball.y) > range) return;
+  for (const actor of [state.user, state.bot]) {
+    const jumping = actor.airborneFor === "block";
+    const range = baseRange + (jumping ? 1.4 : 0);
+    const horiz = Math.hypot(actor.x - ball.x, actor.y - ball.y);
+    if (horiz > range) continue;
+    if (ball.z > PLAYER_HEIGHT + actor.z + 1.3) continue;
+
+    const score = horiz - (jumping ? 1.8 : 0);
+    if (score < best) {
+      best = score;
+      winner = actor;
+    }
+  }
+
+  if (!winner) return;
 
   const changed = state.possession !== winner.id;
   state.possession = winner.id;

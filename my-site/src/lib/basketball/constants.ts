@@ -24,7 +24,7 @@ export const CORNER_X = 22;
 export const CORNER_Y = HOOP_Y + Math.sqrt(ARC_RADIUS ** 2 - CORNER_X ** 2);
 export const RESTRICTED_R = 4;
 
-export const PLAYER_HEIGHT = 6.4;
+export const PLAYER_HEIGHT = 5.5;
 export const PLAYER_RADIUS = 1.02;
 export const BODY_SEPARATION = 1.85;
 
@@ -50,25 +50,24 @@ export const CROSSOVER_REACH = 6;
 export const STUMBLE_DURATION = 0.5;
 export const STUMBLE_FACTOR = 0.44;
 
-export const STEAL_RANGE = 3.3;
-export const STEAL_COOLDOWN = 0.8;
-export const STEAL_BASE = 0.34;
-export const STEAL_SELF_STUMBLE = 0.3;
+export const STEAL_RANGE = 4.6;
+export const STEAL_COOLDOWN = 0.5;
+export const STEAL_BASE = 0.48;
+export const STEAL_SELF_STUMBLE = 0.12;
 
-export const BLOCK_RANGE = 3.4;
-export const BLOCK_BASE = 0.42;
+export const BLOCK_RANGE = 5.2;
+export const BLOCK_BASE = 0.78;
 
 export const SHOT_WINDUP = 0.62;
 export const METER_CENTER = 0.84;
 export const METER_HALF_BASE = 0.09;
 export const METER_OVERFILL = 1.12;
-export const RELEASE_HEIGHT = 6.6;
+export const RELEASE_HEIGHT = 5.7;
 
 export const BALL_RADIUS = 0.4;
 export const BALL_RESTITUTION = 0.54;
 export const BALL_FRICTION = 0.72;
-export const GRAB_RANGE = 2.4;
-export const GRAB_HEIGHT = 7.5;
+export const GRAB_RANGE = 3.4;
 
 export const SHOT_CLOCK = 12;
 export const TARGET_SCORE = 7;

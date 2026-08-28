@@ -8,6 +8,10 @@ type Kit = typeof KIT.user;
 // single uniform scale by the projected `k` is correct. The game loop finds
 // these nodes by their `data-node` name and writes transforms straight to them.
 const up = (feet: number) => -(feet * VERTICAL);
+/** Pull the torso down and clip the legs so they read shorter. */
+const DROP = 0.9;
+const z = (feet: number) => up(feet - DROP);
+const legH = (feet: number) => (feet - DROP) * VERTICAL;
 
 export const METER_W = 14;
 export const METER_H = 96;
@@ -43,10 +47,10 @@ export function ActorSprite({ name, kit }: { name: string; kit: Kit }) {
 function Head({ kit }: { kit: Kit }) {
   return (
     <g>
-      <rect x="-0.16" y={up(5.62)} width="0.32" height={0.28 * VERTICAL} fill={kit.skinShade} />
-      <circle cx="0" cy={up(5.98)} r="0.44" fill={kit.skin} />
+      <rect x="-0.16" y={z(5.62)} width="0.32" height={0.28 * VERTICAL} fill={kit.skinShade} />
+      <circle cx="0" cy={z(5.98)} r="0.44" fill={kit.skin} />
       <path
-        d={`M -0.44 ${up(6.04)} A 0.44 ${0.44 * VERTICAL} 0 0 1 0.44 ${up(6.04)} Z`}
+        d={`M -0.44 ${z(6.04)} A 0.44 ${0.44 * VERTICAL} 0 0 1 0.44 ${z(6.04)} Z`}
         fill={kit.hair}
       />
     </g>
@@ -58,16 +62,16 @@ function RunPose({ kit }: { kit: Kit }) {
     <g>
       <rect
         x="-0.72"
-        y={up(2.95)}
+        y={z(2.95)}
         width="0.5"
-        height={2.95 * VERTICAL}
+        height={legH(2.95)}
         rx="0.2"
         fill={kit.skinShade}
       />
-      <rect x="0.2" y={up(2.7)} width="0.5" height={2.7 * VERTICAL} rx="0.2" fill={kit.skin} />
+      <rect x="0.2" y={z(2.7)} width="0.5" height={legH(2.7)} rx="0.2" fill={kit.skin} />
       <rect
         x="-0.86"
-        y={up(4.15)}
+        y={z(4.15)}
         width="1.72"
         height={1.3 * VERTICAL}
         rx="0.26"
@@ -75,22 +79,22 @@ function RunPose({ kit }: { kit: Kit }) {
       />
       <rect
         x="-0.86"
-        y={up(4.15)}
+        y={z(4.15)}
         width="1.72"
         height={0.34 * VERTICAL}
         fill={kit.shortsShade}
       />
       <polygon
-        points={`-0.78,${up(5.3)} -1.16,${up(4.7)} -0.94,${up(3.5)} -0.62,${up(3.8)}`}
+        points={`-0.78,${z(5.3)} -1.16,${z(4.7)} -0.94,${z(3.5)} -0.62,${z(3.8)}`}
         fill={kit.skin}
       />
       <polygon
-        points={`0.78,${up(5.3)} 1.16,${up(4.76)} 0.98,${up(3.66)} 0.64,${up(3.9)}`}
+        points={`0.78,${z(5.3)} 1.16,${z(4.76)} 0.98,${z(3.66)} 0.64,${z(3.9)}`}
         fill={kit.skinShade}
       />
       <rect
         x="-0.76"
-        y={up(5.5)}
+        y={z(5.5)}
         width="1.52"
         height={1.42 * VERTICAL}
         rx="0.34"
@@ -98,7 +102,7 @@ function RunPose({ kit }: { kit: Kit }) {
       />
       <rect
         x="-0.76"
-        y={up(4.4)}
+        y={z(4.4)}
         width="1.52"
         height={0.32 * VERTICAL}
         fill={kit.jerseyShade}
@@ -113,16 +117,16 @@ function ShootPose({ kit }: { kit: Kit }) {
     <g>
       <rect
         x="-0.56"
-        y={up(2.85)}
+        y={z(2.85)}
         width="0.48"
-        height={2.85 * VERTICAL}
+        height={legH(2.85)}
         rx="0.2"
         fill={kit.skinShade}
       />
-      <rect x="0.08" y={up(2.85)} width="0.48" height={2.85 * VERTICAL} rx="0.2" fill={kit.skin} />
+      <rect x="0.08" y={z(2.85)} width="0.48" height={legH(2.85)} rx="0.2" fill={kit.skin} />
       <rect
         x="-0.8"
-        y={up(4.2)}
+        y={z(4.2)}
         width="1.6"
         height={1.35 * VERTICAL}
         rx="0.26"
@@ -130,18 +134,18 @@ function ShootPose({ kit }: { kit: Kit }) {
       />
       <rect
         x="-0.74"
-        y={up(5.55)}
+        y={z(5.55)}
         width="1.48"
         height={1.4 * VERTICAL}
         rx="0.34"
         fill={kit.jersey}
       />
       <polygon
-        points={`-0.7,${up(5.5)} -0.42,${up(6.9)} -0.02,${up(6.9)} -0.16,${up(5.4)}`}
+        points={`-0.7,${z(5.5)} -0.42,${z(6.9)} -0.02,${z(6.9)} -0.16,${z(5.4)}`}
         fill={kit.skin}
       />
       <polygon
-        points={`0.72,${up(5.4)} 0.5,${up(6.6)} 0.16,${up(6.6)} 0.2,${up(5.3)}`}
+        points={`0.72,${z(5.4)} 0.5,${z(6.6)} 0.16,${z(6.6)} 0.2,${z(5.3)}`}
         fill={kit.skinShade}
       />
       <Head kit={kit} />
@@ -154,16 +158,16 @@ function ReachPose({ kit }: { kit: Kit }) {
     <g>
       <rect
         x="-0.92"
-        y={up(2.8)}
+        y={z(2.8)}
         width="0.48"
-        height={2.8 * VERTICAL}
+        height={legH(2.8)}
         rx="0.2"
         fill={kit.skinShade}
       />
-      <rect x="0.44" y={up(2.8)} width="0.48" height={2.8 * VERTICAL} rx="0.2" fill={kit.skin} />
+      <rect x="0.44" y={z(2.8)} width="0.48" height={legH(2.8)} rx="0.2" fill={kit.skin} />
       <rect
         x="-0.86"
-        y={up(4.1)}
+        y={z(4.1)}
         width="1.72"
         height={1.3 * VERTICAL}
         rx="0.26"
@@ -171,18 +175,18 @@ function ReachPose({ kit }: { kit: Kit }) {
       />
       <rect
         x="-0.74"
-        y={up(5.45)}
+        y={z(5.45)}
         width="1.48"
         height={1.38 * VERTICAL}
         rx="0.34"
         fill={kit.jersey}
       />
       <polygon
-        points={`0.6,${up(5.5)} 0.98,${up(7.3)} 0.6,${up(7.34)} 0.24,${up(5.4)}`}
+        points={`0.6,${z(5.5)} 0.98,${z(7.3)} 0.6,${z(7.34)} 0.24,${z(5.4)}`}
         fill={kit.skin}
       />
       <polygon
-        points={`-0.72,${up(5.35)} -1.34,${up(5.05)} -1.38,${up(4.7)} -0.68,${up(4.6)}`}
+        points={`-0.72,${z(5.35)} -1.34,${z(5.05)} -1.38,${z(4.7)} -0.68,${z(4.6)}`}
         fill={kit.skinShade}
       />
       <Head kit={kit} />
