@@ -38,20 +38,20 @@ const GREY_LEN = MAIN.y - HALL_Y;
 const GREY_Y = HALL_Y;
 const GREY_D = GREY_LEN + 0.12;
 
-const BRICK_LEN = GREY_LEN * 3;
-const BRICK_Y = HALL_Y - BRICK_LEN;
-const BRICK_D = BRICK_LEN + 0.08;
-
 const PLAZA_BAND = 0.28;
 const PLAZA_COLS = 3;
-const PLAZA_ROWS = 4;
-const PLAZA_INNER = (BRICK_LEN - (PLAZA_ROWS + 1) * PLAZA_BAND) / PLAZA_ROWS;
+const PLAZA_INNER = (GREY_LEN * 3 - 5 * PLAZA_BAND) / 4;
 const PLAZA_PITCH = PLAZA_INNER + PLAZA_BAND;
+const PLAZA_ROWS = 7;
+const BRICK_LEN = PLAZA_ROWS * PLAZA_INNER + (PLAZA_ROWS + 1) * PLAZA_BAND;
+const BRICK_Y = HALL_Y - BRICK_LEN;
+const BRICK_D = BRICK_LEN + 0.08;
+const GATE_Y = HALL_Y - GREY_LEN * 3;
 const PLAZA_W = PLAZA_COLS * PLAZA_INNER + (PLAZA_COLS + 1) * PLAZA_BAND;
 const PLAZA_X = CROSS_X + CROSS_W / 2 - PLAZA_W / 2;
 const PLAZA_Y = BRICK_Y;
 const FOUNTAIN_COL = 0;
-const FOUNTAIN_ROW = 2;
+const FOUNTAIN_ROW = 5;
 
 const BEAR_W = 3.7;
 const BEAR_D = 4.05;
@@ -91,7 +91,7 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
         <PlaceName x={BEAR_X + BEAR_W / 2} y={BEAR_Y + BEAR_D * 0.55} z={2.45} size={13}>
           GBC
         </PlaceName>
-        <PlaceName x={CROSS_X + CROSS_W / 2} y={BRICK_Y + 0.2} z={3.85} size={12}>
+        <PlaceName x={CROSS_X + CROSS_W / 2} y={GATE_Y + 0.2} z={3.85} size={12}>
           Sather Gate
         </PlaceName>
       </motion.g>
@@ -101,19 +101,31 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
 
 function BrickWalk() {
   const z = MAIN.h + 0.012;
-  const cells = Array.from({ length: PLAZA_ROWS * PLAZA_COLS }, (_, index) => {
-    const col = index % PLAZA_COLS;
-    const row = Math.floor(index / PLAZA_COLS);
-    return {
+  const tileRows = [1, 5, 6];
+  const brickRow = 2;
+  const cells = tileRows.flatMap((row) =>
+    Array.from({ length: PLAZA_COLS }, (_, col) => ({
       key: `${col}-${row}`,
       x: PLAZA_X + PLAZA_BAND + col * PLAZA_PITCH,
       y: PLAZA_Y + PLAZA_BAND + row * PLAZA_PITCH,
-    };
-  });
+    })),
+  );
+  const brickY = PLAZA_Y + PLAZA_BAND + brickRow * PLAZA_PITCH;
+  const brickX = PLAZA_X + PLAZA_BAND;
+  const brickW = PLAZA_W - PLAZA_BAND * 2;
 
   return (
     <g data-landmark="brick-walk">
       <IsoSlab x={PLAZA_X} y={PLAZA_Y} w={PLAZA_W} d={BRICK_D} h={MAIN.h} {...ROAD} />
+      <polygon
+        points={isoPoints([
+          [brickX, brickY, z],
+          [brickX + brickW, brickY, z],
+          [brickX + brickW, brickY + PLAZA_INNER, z],
+          [brickX, brickY + PLAZA_INNER, z],
+        ])}
+        fill={BRICK.top}
+      />
       {cells.map((cell) => (
         <polygon
           key={cell.key}
@@ -190,7 +202,7 @@ function SatherGate() {
   const sideGap = 0.7;
   const span = post * 4 + innerGap + sideGap * 2;
   const x = CROSS_X + CROSS_W / 2 - span / 2;
-  const y = BRICK_Y - 0.1;
+  const y = GATE_Y - 0.1;
   const posts = [
     x,
     x + post + sideGap,
