@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { TennisGame } from "@/components/tennis/TennisGame";
 
 type TennisOverlayProps = {
   open: boolean;
@@ -21,7 +22,9 @@ export function TennisOverlay({ open }: TennisOverlayProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
           transition={{ duration: reduceMotion ? 0.01 : 0.45, ease: [0.22, 1, 0.36, 1] }}
-        />
+        >
+          <TennisGame />
+        </motion.div>
       ) : null}
     </AnimatePresence>
   );
