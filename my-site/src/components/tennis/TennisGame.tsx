@@ -181,7 +181,9 @@ function readHud(state: GameState, gradeTick: number): Hud {
     phase: state.phase,
     serveStage: state.serveStage,
     faults: state.faults,
-    aiming: state.user.stroke === "aiming" || (state.phase === "serve" && state.serveStage === "toss" && state.score.server === "user"),
+    aiming:
+      state.user.stroke === "aiming" ||
+      (state.phase === "serve" && state.score.server === "user"),
     toast: state.toast?.text ?? null,
     toastKind: state.toast?.kind ?? "info",
     grade: state.flash?.grade ?? null,

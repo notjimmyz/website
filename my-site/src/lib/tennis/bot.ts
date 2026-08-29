@@ -161,11 +161,7 @@ export function decideBot(
   }
 
   if (state.phase === "serve") {
-    if (state.score.server !== team) {
-      const boxSide = ball.x > 0 ? 1 : -1;
-      drive(input, me, boxSide * 7.5, me.own * (BASELINE_Y + 3));
-      return input;
-    }
+    if (state.score.server !== team) return input;
 
     if (state.serveStage === "ready") {
       if (me.nextActionAt === 0) me.nextActionAt = state.t + 0.6;

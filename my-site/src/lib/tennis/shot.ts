@@ -18,6 +18,7 @@ import {
 } from "./constants";
 import { solveFlight } from "./physics";
 import { random } from "./rng";
+import { confineGround, confineServe } from "./court";
 import type { Actor, Ball, GameState, Side, TimingGrade } from "./types";
 import { clamp, clamp01, mix, ramp } from "./math";
 
@@ -116,8 +117,8 @@ export type StrikeResult = {
 };
 
 /**
- * Intended target in, actual ball out. Timing and footwork set the quality, the
- * quality sets the scatter, and the scatter is allowed to miss the court.
+ * Intended target in, actual ball out — unless the strike was on time, in which
+ * case scatter is still allowed but the landing is held on the legal court.
  */
 export function launchShot(
   state: GameState,
@@ -125,6 +126,8 @@ export function launchShot(
   shot: ShotType,
   target: Target,
   quality: number,
+  onTime: boolean,
+  boxSign?: Side,
 ): void {
   const profile = SHOTS[shot];
   const ball = state.ball;
@@ -132,12 +135,22 @@ export function launchShot(
   const spread = mix(profile.errorPoor, profile.errorBest, quality);
   const angle = random(state) * Math.PI * 2;
   const radius = Math.sqrt(random(state)) * spread;
-  const landX = target.x + Math.cos(angle) * radius;
-  const landY = target.y + Math.sin(angle) * radius * 1.3;
+  let landX = target.x + Math.cos(angle) * radius;
+  let landY = target.y + Math.sin(angle) * radius * 1.3;
 
-  const clearance =
+  let clearance =
     mix(profile.clearPoor, profile.clearBest, quality) +
     (random(state) * 2 - 1) * profile.clearScatter * (1 - quality);
+
+  if (onTime) {
+    const held =
+      shot === "serve" && boxSign
+        ? confineServe(landX, landY, (-actor.own) as Side, boxSign)
+        : confineGround(landX, landY, actor.own);
+    landX = held.x;
+    landY = held.y;
+    clearance = Math.max(clearance, 0.7);
+  }
 
   const fromZ = Math.max(ball.z, CONTACT_FLOOR);
   const launch = solveFlight(

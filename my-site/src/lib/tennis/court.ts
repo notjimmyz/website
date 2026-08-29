@@ -8,6 +8,7 @@ import {
   SERVE_STANCE_X,
   SERVICE_LINE_Y,
 } from "./constants";
+import { clamp } from "./math";
 import type { Side } from "./types";
 
 /** The tape sags toward the middle, which is what makes cross-court cheaper. */
@@ -52,4 +53,27 @@ export function serveStanceX(own: Side, deuce: boolean): number {
 /** The target box always sits diagonally opposite the server's stance. */
 export function serveBoxSign(own: Side, deuce: boolean): Side {
   return (-own * (deuce ? 1 : -1)) as Side;
+}
+
+const INSET = 0.45;
+
+/** Pull a landing back onto the opponent's singles court. */
+export function confineGround(x: number, y: number, hitterOwn: Side) {
+  const far = hitterOwn * -BASELINE_Y;
+  const near = hitterOwn * -INSET;
+  const lo = Math.min(far, near);
+  const hi = Math.max(far, near);
+  return {
+    x: clamp(x, -COURT_HALF_WIDTH + INSET, COURT_HALF_WIDTH - INSET),
+    y: clamp(y, lo, hi),
+  };
+}
+
+/** Pull a serve landing back into the aimed service box. */
+export function confineServe(x: number, y: number, receiver: Side, boxSign: Side) {
+  const xLo = boxSign > 0 ? INSET : -COURT_HALF_WIDTH + INSET;
+  const xHi = boxSign > 0 ? COURT_HALF_WIDTH - INSET : -INSET;
+  const yLo = receiver > 0 ? INSET : -SERVICE_LINE_Y + INSET;
+  const yHi = receiver > 0 ? SERVICE_LINE_Y - INSET : -INSET;
+  return { x: clamp(x, xLo, xHi), y: clamp(y, yLo, yHi) };
 }

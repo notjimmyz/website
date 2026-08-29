@@ -7,11 +7,10 @@ import {
   GAMES_TO_WIN,
   MOVE_ACCEL,
   MOVE_FRICTION,
+  MOVE_BRAKE,
   MOVE_SPEED,
   NET_STANDOFF,
-  PLANT_DAMP,
   READY_BACK,
-  RECOVER_SPEED_SCALE,
   RETURN_STANCE_BACK,
   RETURN_STANCE_X,
   ROAM_BACK,
@@ -21,6 +20,7 @@ import {
   SERVE_STANCE_BACK,
   SHOTS,
   TIEBREAK_TARGET,
+  TIMING_ON,
   TOAST_DURATION,
   TOSS_START_Z,
   TOSS_VZ,
@@ -163,13 +163,18 @@ export function serveContext(state: GameState) {
 }
 
 function setUpServe(state: GameState) {
-  const { server, deuce, boxSign } = serveContext(state);
-  const receiver = actorOf(state, other(server.id));
-
   state.phase = "serve";
   state.serveStage = "ready";
   state.phaseUntil = state.t + SERVE_DELAY;
   state.faults = 0;
+  plantServe(state);
+  restBall(state);
+}
+
+/** Server and returner stand still on opposite halves until the ball is struck. */
+function plantServe(state: GameState) {
+  const { server, deuce, boxSign } = serveContext(state);
+  const receiver = actorOf(state, other(server.id));
 
   placeActor(
     server,
@@ -181,8 +186,6 @@ function setUpServe(state: GameState) {
     boxSign * RETURN_STANCE_X,
     receiver.own * (BASELINE_Y + RETURN_STANCE_BACK),
   );
-
-  restBall(state);
 }
 
 function placeActor(actor: Actor, x: number, y: number) {
@@ -234,6 +237,8 @@ function toss(state: GameState) {
 
 function updateServe(state: GameState, input: Input) {
   const { server } = serveContext(state);
+  server.aimX = input.moveX;
+  server.aimY = input.moveY;
 
   if (state.serveStage === "ready") {
     if (input.topspin && state.t >= state.phaseUntil) toss(state);
@@ -241,10 +246,6 @@ function updateServe(state: GameState, input: Input) {
   }
 
   if (server.stroke === "idle") {
-    // The toss is up: WASD is already picking the corner of the box.
-    server.aimX = input.moveX;
-    server.aimY = input.moveY;
-
     if (input.topspin) {
       server.stroke = "aiming";
       server.shot = "serve";
@@ -270,6 +271,7 @@ function fault(state: GameState) {
   state.serveStage = "ready";
   state.phase = "serve";
   state.phaseUntil = state.t + FAULT_PAUSE;
+  plantServe(state);
   restBall(state);
   say(state, "Fault", "fault");
 }
@@ -283,21 +285,19 @@ function pickShot(input: Input): ShotType | null {
   return null;
 }
 
-/** The server stands still through the toss, so WASD is free to aim. */
+/**
+ * Feet stay put for the serve, the swing, and the brief recover after contact.
+ * WASD during those windows is aim, not movement.
+ */
 function isPlanted(state: GameState, actor: Actor) {
-  if (actor.stroke === "aiming") return true;
-  return (
-    state.phase === "serve" &&
-    state.serveStage === "toss" &&
-    actor.id === state.score.server
-  );
+  if (actor.stroke === "aiming" || actor.stroke === "recover") return true;
+  return state.phase === "serve";
 }
 
 function updateActor(state: GameState, actor: Actor, input: Input, dt: number) {
   if (isPlanted(state, actor)) {
-    const damp = Math.exp(-PLANT_DAMP * dt);
-    actor.vx *= damp;
-    actor.vy *= damp;
+    actor.vx = 0;
+    actor.vy = 0;
     if (actor.stroke === "aiming") {
       actor.aimX = input.moveX;
       actor.aimY = input.moveY;
@@ -342,7 +342,6 @@ function updateActor(state: GameState, actor: Actor, input: Input, dt: number) {
 }
 
 function steer(actor: Actor, input: Input, dt: number) {
-  const scale = actor.stroke === "recover" ? RECOVER_SPEED_SCALE : 1;
   let mx = input.moveX;
   let my = input.moveY;
   const len = Math.hypot(mx, my);
@@ -352,9 +351,10 @@ function steer(actor: Actor, input: Input, dt: number) {
   }
 
   // Input is read in the player's own frame, so W is always toward the net.
-  const wantX = actor.own * mx * MOVE_SPEED * scale;
-  const wantY = actor.own * my * MOVE_SPEED * scale;
-  const rate = len > 0.01 ? MOVE_ACCEL : MOVE_FRICTION;
+  const wantX = actor.own * mx * MOVE_SPEED;
+  const wantY = actor.own * my * MOVE_SPEED;
+  const reversing = wantX * actor.vx + wantY * actor.vy < 0;
+  const rate = len < 0.01 ? MOVE_FRICTION : reversing ? MOVE_BRAKE : MOVE_ACCEL;
 
   actor.vx = approach(actor.vx, wantX, rate * dt);
   actor.vy = approach(actor.vy, wantY, rate * dt);
@@ -417,7 +417,14 @@ function resolveStroke(state: GameState, actor: Actor, shot: ShotType) {
   );
 
   const stretched = Math.abs(ball.x - actor.x) > 3.6;
-  launchShot(state, actor, shot, groundTarget(actor, SHOTS[shot]), quality);
+  launchShot(
+    state,
+    actor,
+    shot,
+    groundTarget(actor, SHOTS[shot]),
+    quality,
+    Math.abs(error) <= TIMING_ON,
+  );
   ball.serve = false;
 
   actor.stroke = "recover";
@@ -443,7 +450,15 @@ function resolveServe(state: GameState, actor: Actor) {
     1,
   );
 
-  launchShot(state, actor, "serve", serveTarget(actor, boxSign, SHOTS.serve), quality);
+  launchShot(
+    state,
+    actor,
+    "serve",
+    serveTarget(actor, boxSign, SHOTS.serve),
+    quality,
+    Math.abs(error) <= TIMING_ON,
+    boxSign,
+  );
   ball.serve = true;
   state.phase = "rally";
 

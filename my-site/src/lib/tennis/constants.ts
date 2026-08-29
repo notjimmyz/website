@@ -20,12 +20,11 @@ export const LINE_WIDTH = 0.24;
 // Movement -------------------------------------------------------------------
 
 export const PLAYER_HEIGHT = 5.8;
-export const MOVE_SPEED = 29;
-export const MOVE_ACCEL = 165;
-export const MOVE_FRICTION = 140;
-/** Velocity decay per second while a swing is winding up, so shots plant. */
-export const PLANT_DAMP = 5.4;
-export const RECOVER_SPEED_SCALE = 0.72;
+export const MOVE_SPEED = 16;
+/** A step or two to get going, and a short plant when the keys come up. */
+export const MOVE_ACCEL = 48;
+export const MOVE_FRICTION = 110;
+export const MOVE_BRAKE = 140;
 
 /** How far a player may stray past their own lines. */
 export const ROAM_BACK = 7;
