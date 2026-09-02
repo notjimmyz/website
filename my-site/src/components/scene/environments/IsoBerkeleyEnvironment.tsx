@@ -4,7 +4,7 @@ import { motion, useReducedMotion, useTransform } from "motion/react";
 import { eraAt, eraDistance } from "@/lib/timeline";
 import type { EnvironmentProps } from "./types";
 import { iso, isoPoints, TILE_H, TILE_W } from "./iso/project";
-import { IsoBox, IsoCone, IsoSlab, IsoWindows } from "./iso/primitives";
+import { IsoBox, IsoCone, IsoSlab, IsoTree, IsoWindows } from "./iso/primitives";
 
 const COLLEGE_AT = eraAt("college");
 
@@ -66,6 +66,18 @@ const SPROUL_D = 4 * PLAZA_INNER + 3 * PLAZA_BAND;
 const SPROUL_X = PLAZA_X + PLAZA_W + 0.32;
 const SPROUL_Y = PLAZA_Y + PLAZA_BAND + 3 * PLAZA_PITCH;
 
+const TREE_PAD_W = 2 * PLAZA_INNER + 3 * PLAZA_BAND;
+const TREE_PAD_D = 2 * PLAZA_INNER + 3 * PLAZA_BAND;
+const TREE_PAD_X = PLAZA_X - TREE_PAD_W;
+const TREE_PAD_Y = PLAZA_Y - PLAZA_PITCH;
+
+const DW_D = 5 * PLAZA_PITCH;
+const DW_W = 2.85 * PLAZA_PITCH;
+const DW_X = TREE_PAD_X - 0.3 - DW_W;
+const DW_Y = TREE_PAD_Y + TREE_PAD_D / 2 - DW_D / 2;
+const HEDGE = { top: "#6FA86C", left: "#4E7E52", right: "#5E8E60" };
+
+
 export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
   const reduceMotion = useReducedMotion();
   const drift = useTransform(progress, (value) =>
@@ -85,6 +97,8 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
 
       <motion.g style={{ x: reduceMotion ? 0 : drift }}>
         <BrickWalk />
+        <DwinelleHall />
+        <GateTreeCourt reduceMotion={Boolean(reduceMotion)} />
         <SproulHall />
         <SatherGate />
         <GoldenBear />
@@ -102,6 +116,9 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
         </PlaceName>
         <PlaceName x={SPROUL_X + SPROUL_W / 2} y={SPROUL_Y + SPROUL_D / 2} z={3.95} size={12}>
           Sproul
+        </PlaceName>
+        <PlaceName x={DW_X + DW_W * 0.58} y={DW_Y + DW_D * 0.5} z={3.7} size={12}>
+          Dwinelle
         </PlaceName>
       </motion.g>
     </svg>
@@ -125,7 +142,7 @@ function BrickWalk() {
 
   return (
     <g data-landmark="brick-walk">
-      <IsoSlab x={PLAZA_X} y={PLAZA_Y} w={PLAZA_W} d={BRICK_D} h={MAIN.h} {...ROAD} />
+      <IsoSlab x={PLAZA_X} y={PLAZA_Y - 3 * PLAZA_PITCH} w={PLAZA_W} d={BRICK_D + 3 * PLAZA_PITCH} h={MAIN.h} {...ROAD} />
       <polygon
         points={isoPoints([
           [brickX, brickY, z],
@@ -147,6 +164,225 @@ function BrickWalk() {
           fill={BRICK.top}
         />
       ))}
+    </g>
+  );
+}
+
+function GateTreeCourt({ reduceMotion }: { reduceMotion: boolean }) {
+  const z = MAIN.h;
+  const padW = TREE_PAD_W;
+  const padD = TREE_PAD_D;
+  const padX = TREE_PAD_X;
+  const padY = TREE_PAD_Y;
+  const planter = PLAZA_INNER * 0.4;
+  const cells = [0, 1].flatMap((col) =>
+    [0, 1].map((row) => ({
+      key: `${col}-${row}`,
+      col,
+      row,
+      x: padX + PLAZA_BAND + col * PLAZA_PITCH,
+      y: padY + PLAZA_BAND + row * PLAZA_PITCH,
+    })),
+  );
+
+  return (
+    <g data-landmark="gate-tree-court">
+      <IsoSlab x={padX} y={padY} w={padW} d={padD} h={MAIN.h} {...ROAD} />
+      {cells.map((cell, index) => {
+        const cx = cell.x + PLAZA_INNER / 2;
+        const cy = cell.y + PLAZA_INNER / 2;
+        const lampX = cell.col === 0 ? cell.x + PLAZA_INNER - 0.12 : cell.x + 0.12;
+        return (
+          <g key={cell.key}>
+            <polygon
+              points={isoPoints([
+                [cell.x, cell.y, z + 0.012],
+                [cell.x + PLAZA_INNER, cell.y, z + 0.012],
+                [cell.x + PLAZA_INNER, cell.y + PLAZA_INNER, z + 0.012],
+                [cell.x, cell.y + PLAZA_INNER, z + 0.012],
+              ])}
+              fill={SLAB.top}
+            />
+            <IsoSlab
+              x={cx - planter / 2}
+              y={cy - planter / 2}
+              z={z}
+              w={planter}
+              d={planter}
+              h={0.08}
+              {...STONE}
+            />
+            <IsoDisc x={cx} y={cy} z={z + 0.08} r={planter * 0.28} fill="#B08968" />
+            <IsoTree
+              x={cx}
+              y={cy}
+              z={z + 0.08}
+              scale={0.58}
+              canopy={index % 2 === 0 ? "#8FCB8A" : "#7EBE7A"}
+              delay={`${(index % 4) * 0.2}s`}
+              reduceMotion={reduceMotion}
+            />
+            <Lamp x={lampX} y={cy} z={z} />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function Lamp({ x, y, z }: { x: number; y: number; z: number }) {
+  const cap = iso(x, y, z + 0.78);
+  return (
+    <g>
+      <IsoBox
+        x={x - 0.035}
+        y={y - 0.035}
+        z={z}
+        w={0.07}
+        d={0.07}
+        h={0.68}
+        top="#5C544C"
+        left="#3E3A36"
+        right="#4A4640"
+      />
+      <circle cx={cap.x} cy={cap.y} r="3.6" fill="#F3E4B8" />
+    </g>
+  );
+}
+
+function TileRoof({
+  x,
+  y,
+  z,
+  w,
+  d,
+  edge = TERRA,
+  cap = SLAB,
+}: {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+  d: number;
+  edge?: { top: string; left: string; right: string };
+  cap?: { top: string; left: string; right: string };
+}) {
+  const rim = 0.22;
+  return (
+    <g>
+      <IsoSlab x={x - 0.08} y={y - 0.08} z={z} w={w + 0.16} d={d + 0.16} h={0.1} {...edge} />
+      <IsoSlab x={x + rim} y={y + rim} z={z + 0.1} w={w - rim * 2} d={d - rim * 2} h={0.08} {...cap} />
+    </g>
+  );
+}
+
+function DwinelleHall() {
+  const z = MAIN.h;
+  const h = 3.05;
+  const wingD = PLAZA_INNER * 0.92;
+  const reach = PLAZA_INNER * 1.08;
+  const spineW = PLAZA_INNER * 1.12;
+  const frontX = DW_X + DW_W - spineW - reach;
+  const frontW = spineW + reach;
+  const courtY = DW_Y + wingD;
+  const courtD = DW_D - wingD * 2;
+  const southY = DW_Y + DW_D - wingD;
+  const rearW = frontX - DW_X;
+  const wall = 0.7;
+  const hole = PLAZA_INNER * 0.88;
+  const ringW = hole + wall * 2;
+  const ringD = hole + wall * 2;
+  const ringX = DW_X;
+  const ringY = DW_Y - 0.34 - ringD;
+  const connW = PLAZA_INNER * 0.62;
+  const connX = DW_X + 0.18;
+  const connY = ringY + ringD - 0.06;
+  const connD = DW_Y - connY + 0.1;
+  const cx = frontX + spineW + reach * 0.52;
+  const cy = DW_Y + DW_D / 2;
+  const brickCols = 2;
+  const brickRows = 6;
+  const brick = 0.2;
+  const brickGap = 0.055;
+  const brickW = brickCols * brick + (brickCols + 1) * brickGap;
+  const brickD = brickRows * brick + (brickRows + 1) * brickGap;
+  const brickX = cx - brickW / 2;
+  const brickY = cy - brickD / 2;
+  const hedge = Array.from({ length: 6 }, (_, index) => courtY + 0.16 + index * ((courtD - 0.48) / 5));
+
+  return (
+    <g data-landmark="dwinelle" className="iso-hover" style={{ pointerEvents: "auto" }}>
+      <IsoSlab x={frontX + spineW} y={courtY} z={z} w={reach} d={courtD} h={0.1} {...ROAD} />
+      <IsoSlab x={DW_X + 0.18} y={courtY + 0.14} z={z} w={rearW - 0.32} d={courtD - 0.28} h={0.08} {...ROAD} />
+
+      <IsoDisc x={cx} y={cy} z={z + 0.1} r={1.18} fill={STONE.top} />
+      <IsoDisc x={cx} y={cy} z={z + 0.16} r={0.92} fill={STONE.left} />
+      <IsoSlab x={brickX - 0.08} y={brickY - 0.08} z={z + 0.16} w={brickW + 0.16} d={brickD + 0.16} h={0.06} {...STONE} />
+      {Array.from({ length: brickCols }, (_, col) =>
+        Array.from({ length: brickRows }, (_, row) => (
+          <polygon
+            key={`${col}-${row}`}
+            points={isoPoints([
+              [brickX + brickGap + col * (brick + brickGap), brickY + brickGap + row * (brick + brickGap), z + 0.23],
+              [brickX + brickGap + col * (brick + brickGap) + brick, brickY + brickGap + row * (brick + brickGap), z + 0.23],
+              [brickX + brickGap + col * (brick + brickGap) + brick, brickY + brickGap + row * (brick + brickGap) + brick, z + 0.23],
+              [brickX + brickGap + col * (brick + brickGap), brickY + brickGap + row * (brick + brickGap) + brick, z + 0.23],
+            ])}
+            fill={BRICK.top}
+          />
+        )),
+      )}
+
+      <IsoBox x={frontX} y={DW_Y} z={z} w={frontW} d={wingD} h={h} {...WHITE} />
+      <IsoBox x={frontX} y={southY} z={z} w={frontW} d={wingD} h={h} {...WHITE} />
+      <IsoBox x={frontX} y={courtY} z={z} w={spineW} d={courtD} h={h} {...WHITE} />
+      <IsoBox x={DW_X} y={southY} z={z} w={rearW + 0.02} d={wingD} h={h * 0.94} {...WHITE} />
+      <IsoBox x={DW_X} y={courtY} z={z} w={0.88} d={courtD} h={h * 0.9} {...WHITE} />
+      <IsoBox x={DW_X} y={DW_Y} z={z} w={rearW + 0.02} d={wingD} h={h} {...WHITE} />
+
+      <IsoSlab x={ringX + wall} y={ringY + wall} z={z} w={hole} d={hole} h={0.1} {...ROAD} />
+      <IsoBox x={ringX} y={ringY} z={z} w={ringW} d={wall} h={h * 0.92} {...WHITE} />
+      <IsoBox x={ringX} y={ringY + wall + hole} z={z} w={ringW} d={wall} h={h * 0.92} {...WHITE} />
+      <IsoBox x={ringX} y={ringY} z={z} w={wall} d={ringD} h={h * 0.92} {...WHITE} />
+      <IsoBox x={ringX + wall + hole} y={ringY} z={z} w={wall} d={ringD} h={h * 0.92} {...WHITE} />
+      <IsoBox x={connX} y={connY} z={z} w={connW} d={connD} h={h * 0.82} {...WHITE} />
+      <IsoBox x={connX - 0.08} y={DW_Y - 0.12} z={z} w={connW + 0.16} d={0.42} h={h + 0.28} {...WHITE} />
+
+      <IsoWindows face="right" x={frontX} y={DW_Y} z={z} w={frontW} d={wingD} h={h} cols={4} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+      <IsoWindows face="left" x={frontX} y={DW_Y} z={z} w={frontW} d={wingD} h={h} cols={3} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+      <IsoWindows face="right" x={frontX} y={southY} z={z} w={frontW} d={wingD} h={h} cols={4} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+      <IsoWindows face="left" x={frontX} y={southY} z={z} w={frontW} d={wingD} h={h} cols={3} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+      <IsoWindows face="right" x={frontX} y={courtY} z={z} w={spineW} d={courtD} h={h} cols={5} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+      <IsoWindows face="left" x={frontX} y={courtY} z={z} w={spineW} d={courtD} h={h} cols={4} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+      <IsoWindows face="right" x={ringX + wall + hole} y={ringY} z={z} w={wall} d={ringD} h={h * 0.92} cols={2} rows={2} fill={DARK_GLASS} v0={0.16} v1={0.86} />
+      <IsoWindows face="left" x={ringX} y={ringY} z={z} w={wall} d={ringD} h={h * 0.92} cols={2} rows={2} fill={DARK_GLASS} v0={0.16} v1={0.86} />
+      <IsoWindows face="right" x={DW_X} y={DW_Y} z={z} w={rearW + 0.02} d={wingD} h={h} cols={3} rows={3} fill={DARK_GLASS} v0={0.12} v1={0.9} />
+
+      <IsoSlab x={frontX + frontW - 0.1} y={DW_Y + 0.42} z={z + h * 0.42} w={0.16} d={0.58} h={0.07} {...STONE} />
+      <IsoSlab x={frontX + frontW - 0.1} y={southY + 0.42} z={z + h * 0.42} w={0.16} d={0.58} h={0.07} {...STONE} />
+      <IsoSlab x={frontX + frontW - 0.1} y={DW_Y + 0.42} z={z + h * 0.68} w={0.16} d={0.58} h={0.07} {...STONE} />
+      <IsoSlab x={frontX + frontW - 0.1} y={southY + 0.42} z={z + h * 0.68} w={0.16} d={0.58} h={0.07} {...STONE} />
+
+      <IsoSlab x={frontX + spineW + reach - 0.38} y={courtY - 0.06} z={z} w={0.38} d={0.26} h={0.1} {...STONE} />
+      <IsoSlab x={frontX + spineW + reach - 0.38} y={southY - 0.2} z={z} w={0.38} d={0.26} h={0.1} {...STONE} />
+
+      {hedge.map((hy) => (
+        <IsoBox key={hy} x={frontX + spineW + 0.06} y={hy} z={z} w={0.2} d={0.2} h={0.26} {...HEDGE} />
+      ))}
+      <IsoTree x={frontX + frontW - 0.15} y={southY + wingD + 0.15} z={z} scale={0.42} canopy="#7EBE7A" delay="0.2s" />
+      <IsoTree x={frontX + frontW + 0.05} y={southY + 0.2} z={z} scale={0.38} canopy="#8FCB8A" delay="0.5s" />
+
+      <TileRoof x={frontX} y={DW_Y} z={z + h} w={frontW} d={wingD} edge={BRICK} cap={BRICK} />
+      <TileRoof x={frontX} y={southY} z={z + h} w={frontW} d={wingD} edge={BRICK} cap={BRICK} />
+      <TileRoof x={frontX} y={courtY} z={z + h} w={spineW} d={courtD} edge={BRICK} cap={BRICK} />
+      <TileRoof x={DW_X} y={southY} z={z + h * 0.94} w={rearW + 0.02} d={wingD} edge={BRICK} cap={BRICK} />
+      <TileRoof x={DW_X} y={DW_Y} z={z + h} w={rearW + 0.02} d={wingD} edge={BRICK} cap={BRICK} />
+      <TileRoof x={ringX} y={ringY} z={z + h * 0.92} w={ringW} d={wall} edge={BRICK} cap={BRICK} />
+      <TileRoof x={ringX} y={ringY + wall + hole} z={z + h * 0.92} w={ringW} d={wall} edge={BRICK} cap={BRICK} />
+      <TileRoof x={ringX} y={ringY} z={z + h * 0.92} w={wall} d={ringD} edge={BRICK} cap={BRICK} />
+      <TileRoof x={ringX + wall + hole} y={ringY} z={z + h * 0.92} w={wall} d={ringD} edge={BRICK} cap={BRICK} />
+      <IsoSlab x={connX - 0.06} y={connY} z={z + h * 0.82} w={connW + 0.12} d={connD} h={0.1} {...SLAB} />
+      <IsoSlab x={connX - 0.08} y={DW_Y - 0.12} z={z + h + 0.28} w={connW + 0.16} d={0.42} h={0.08} {...SLAB} />
     </g>
   );
 }

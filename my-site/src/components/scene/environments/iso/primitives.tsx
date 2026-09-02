@@ -333,6 +333,7 @@ export function IsoTree({
   x,
   y,
   z = 0,
+  scale = 1,
   canopy = "#8FCB8A",
   canopyDark = "#6FA86C",
   delay = "0s",
@@ -341,6 +342,7 @@ export function IsoTree({
   x: number;
   y: number;
   z?: number;
+  scale?: number;
   canopy?: string;
   canopyDark?: string;
   delay?: string;
@@ -348,14 +350,17 @@ export function IsoTree({
 }) {
   const base = iso(x, y, z);
   const top = iso(x, y, z + 1.15);
+  const trunk = 6 * scale;
+  const canopyR = 16 * scale;
+  const shadeR = 10 * scale;
 
   return (
     <g className="iso-hover" style={{ pointerEvents: "auto" }}>
-      <ellipse cx={base.x} cy={base.y + 6} rx="16" ry="7" fill="#C8BEB0" opacity="0.35" />
+      <ellipse cx={base.x} cy={base.y + 6} rx={16 * scale} ry={7 * scale} fill="#C8BEB0" opacity="0.35" />
       <rect
-        x={base.x - 3}
+        x={base.x - trunk / 2}
         y={top.y + 10}
-        width="6"
+        width={trunk}
         height={base.y - top.y - 6}
         fill="#B08968"
       />
@@ -363,8 +368,8 @@ export function IsoTree({
         className={reduceMotion ? undefined : "iso-sway"}
         style={{ animationDelay: delay }}
       >
-        <circle cx={top.x} cy={top.y} r="16" fill={canopy} />
-        <circle cx={top.x - 5} cy={top.y + 4} r="10" fill={canopyDark} opacity="0.45" />
+        <circle cx={top.x} cy={top.y} r={canopyR} fill={canopy} />
+        <circle cx={top.x - 5 * scale} cy={top.y + 4 * scale} r={shadeR} fill={canopyDark} opacity="0.45" />
       </g>
     </g>
   );
