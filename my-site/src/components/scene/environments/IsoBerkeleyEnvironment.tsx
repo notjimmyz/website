@@ -42,16 +42,16 @@ const PLAZA_BAND = 0.28;
 const PLAZA_COLS = 3;
 const PLAZA_INNER = (GREY_LEN * 3 - 5 * PLAZA_BAND) / 4;
 const PLAZA_PITCH = PLAZA_INNER + PLAZA_BAND;
-const PLAZA_ROWS = 7;
+const PLAZA_ROWS = 6;
 const BRICK_LEN = PLAZA_ROWS * PLAZA_INNER + (PLAZA_ROWS + 1) * PLAZA_BAND;
 const BRICK_Y = HALL_Y - BRICK_LEN;
 const BRICK_D = BRICK_LEN + 0.08;
-const GATE_Y = HALL_Y - GREY_LEN * 3;
+const GATE_Y = HALL_Y - (4 * PLAZA_INNER + 5 * PLAZA_BAND);
 const PLAZA_W = PLAZA_COLS * PLAZA_INNER + (PLAZA_COLS + 1) * PLAZA_BAND;
 const PLAZA_X = CROSS_X + CROSS_W / 2 - PLAZA_W / 2;
 const PLAZA_Y = BRICK_Y;
 const FOUNTAIN_COL = 0;
-const FOUNTAIN_ROW = 5;
+const FOUNTAIN_ROW = 4;
 
 const BEAR_W = 3.7;
 const BEAR_D = 4.05;
@@ -60,6 +60,11 @@ const BEAR_Y = HALL_Y - BEAR_GAP - BEAR_D;
 const BEAR_X = CROSS_X - 2.55 - BEAR_W;
 const FOUNTAIN_X = PLAZA_X + PLAZA_BAND + FOUNTAIN_COL * PLAZA_PITCH + PLAZA_INNER / 2;
 const FOUNTAIN_Y = PLAZA_Y + PLAZA_BAND + FOUNTAIN_ROW * PLAZA_PITCH + PLAZA_INNER / 2;
+
+const SPROUL_W = 3.85;
+const SPROUL_D = 4 * PLAZA_INNER + 3 * PLAZA_BAND;
+const SPROUL_X = PLAZA_X + PLAZA_W + 0.32;
+const SPROUL_Y = PLAZA_Y + PLAZA_BAND + 3 * PLAZA_PITCH;
 
 export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
   const reduceMotion = useReducedMotion();
@@ -80,6 +85,7 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
 
       <motion.g style={{ x: reduceMotion ? 0 : drift }}>
         <BrickWalk />
+        <SproulHall />
         <SatherGate />
         <GoldenBear />
         <LudwigsFountain />
@@ -94,6 +100,9 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
         <PlaceName x={CROSS_X + CROSS_W / 2} y={GATE_Y + 0.2} z={3.85} size={12}>
           Sather Gate
         </PlaceName>
+        <PlaceName x={SPROUL_X + SPROUL_W / 2} y={SPROUL_Y + SPROUL_D / 2} z={3.95} size={12}>
+          Sproul
+        </PlaceName>
       </motion.g>
     </svg>
   );
@@ -101,7 +110,7 @@ export function IsoBerkeleyEnvironment({ progress }: EnvironmentProps) {
 
 function BrickWalk() {
   const z = MAIN.h + 0.012;
-  const tileRows = [1, 5, 6];
+  const tileRows = [1, 4, 5];
   const brickRow = 2;
   const cells = tileRows.flatMap((row) =>
     Array.from({ length: PLAZA_COLS }, (_, col) => ({
@@ -138,6 +147,158 @@ function BrickWalk() {
           fill={BRICK.top}
         />
       ))}
+    </g>
+  );
+}
+
+function SproulRoof({ z }: { z: number }) {
+  const trim = 0.1;
+  const capW = SPROUL_W + 0.28;
+  const capD = SPROUL_D * 0.28;
+  const capX = SPROUL_X - 0.14;
+  const northY = SPROUL_Y - 0.06;
+  const southY = SPROUL_Y + SPROUL_D - capD + 0.06;
+  const spineW = SPROUL_W * 0.44;
+  const spineX = SPROUL_X + (SPROUL_W - spineW) / 2;
+  const spineY = northY + capD - 0.08;
+  const spineD = southY - spineY + 0.08;
+  const hole = 0.58;
+  const well = { top: "#3A4248", left: "#2A3238", right: "#323A40" };
+
+  return (
+    <g>
+      <IsoSlab x={capX - trim} y={northY - trim} z={z} w={capW + trim * 2} d={capD + trim * 2} h={0.07} {...WHITE} />
+      <IsoSlab x={capX} y={northY} z={z + 0.07} w={capW} d={capD} h={0.13} {...TERRA} />
+      <IsoSlab x={capX - trim} y={southY - trim} z={z} w={capW + trim * 2} d={capD + trim * 2} h={0.07} {...WHITE} />
+      <IsoSlab x={capX} y={southY} z={z + 0.07} w={capW} d={capD} h={0.13} {...TERRA} />
+      <IsoSlab x={spineX - trim} y={spineY} z={z} w={spineW + trim * 2} d={spineD} h={0.07} {...WHITE} />
+      <IsoSlab x={spineX} y={spineY} z={z + 0.07} w={spineW} d={spineD} h={0.13} {...TERRA} />
+      <IsoSlab
+        x={spineX + spineW / 2 - 0.11}
+        y={spineY}
+        z={z + 0.2}
+        w={0.22}
+        d={spineD}
+        h={0.05}
+        {...WHITE}
+      />
+      <IsoSlab
+        x={capX + capW / 2 - hole / 2}
+        y={southY + capD * 0.28}
+        z={z + 0.2}
+        w={hole}
+        d={hole}
+        h={0.06}
+        {...well}
+      />
+    </g>
+  );
+}
+
+function SproulHall() {
+  const z = MAIN.h;
+  const h = 2.85;
+  const wingInset = 0.42;
+  const midD = SPROUL_D * 0.36;
+  const wingD = (SPROUL_D - midD) / 2;
+  const midY = SPROUL_Y + wingD;
+  const wingX = SPROUL_X + wingInset;
+  const wingW = SPROUL_W - wingInset;
+  const col = 0.16;
+  const colH = h * 0.78;
+  const cols = Array.from({ length: 4 }, (_, index) => midY + 0.22 + index * ((midD - 0.44 - col) / 3));
+
+  return (
+    <g data-landmark="sproul" className="iso-hover" style={{ pointerEvents: "auto" }}>
+      <IsoSlab
+        x={SPROUL_X - 0.55}
+        y={midY + 0.18}
+        z={z}
+        w={0.55}
+        d={midD - 0.36}
+        h={0.1}
+        {...STONE}
+      />
+      <IsoSlab
+        x={SPROUL_X - 0.34}
+        y={midY + 0.26}
+        z={z + 0.1}
+        w={0.34}
+        d={midD - 0.52}
+        h={0.1}
+        {...STONE}
+      />
+      <IsoBox x={wingX} y={SPROUL_Y} z={z} w={wingW} d={wingD} h={h * 0.92} {...WHITE} />
+      <IsoBox x={wingX} y={SPROUL_Y + wingD + midD} z={z} w={wingW} d={wingD} h={h * 0.92} {...WHITE} />
+      <IsoBox x={SPROUL_X} y={midY} z={z} w={SPROUL_W} d={midD} h={h} {...WHITE} />
+      <IsoWindows
+        face="left"
+        x={wingX}
+        y={SPROUL_Y}
+        z={z}
+        w={wingW}
+        d={SPROUL_D}
+        h={h * 0.92}
+        cols={5}
+        rows={2}
+        fill={DARK_GLASS}
+        v0={0.14}
+        v1={0.86}
+      />
+      <IsoWindows
+        face="right"
+        x={wingX}
+        y={SPROUL_Y}
+        z={z}
+        w={wingW}
+        d={wingD}
+        h={h * 0.92}
+        cols={3}
+        rows={2}
+        fill={DARK_GLASS}
+        v0={0.14}
+        v1={0.86}
+      />
+      <IsoWindows
+        face="right"
+        x={wingX}
+        y={SPROUL_Y + wingD + midD}
+        z={z}
+        w={wingW}
+        d={wingD}
+        h={h * 0.92}
+        cols={3}
+        rows={2}
+        fill={DARK_GLASS}
+        v0={0.14}
+        v1={0.86}
+      />
+      <IsoWindows
+        face="right"
+        x={SPROUL_X}
+        y={midY}
+        z={z}
+        w={SPROUL_W}
+        d={midD}
+        h={h}
+        cols={3}
+        rows={3}
+        fill={DARK_GLASS}
+        v0={0.12}
+        v1={0.88}
+      />
+      {cols.map((cy) => (
+        <IsoBox key={cy} x={SPROUL_X - 0.12} y={cy} z={z + 0.2} w={col} d={col} h={colH} {...COL} />
+      ))}
+      <polygon
+        points={isoPoints([
+          [SPROUL_X - 0.04, midY + 0.08, z + h],
+          [SPROUL_X - 0.04, midY + midD - 0.08, z + h],
+          [SPROUL_X - 0.04, midY + midD / 2, z + h + 0.48],
+        ])}
+        fill={WHITE.top}
+      />
+      <SproulRoof z={z + h} />
     </g>
   );
 }
